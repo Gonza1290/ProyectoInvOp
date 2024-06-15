@@ -20,6 +20,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,6 +30,10 @@ INSTALLED_APPS = [
     #Apps propias
     'sistemaApp.apps.SistemaappConfig',
 ]
+JAZZMIN_SETTINGS = {
+    # title of the window (Will default to current_admin_site.site_title if absent or None)
+    "site_title": "Proyecto InvOp"
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

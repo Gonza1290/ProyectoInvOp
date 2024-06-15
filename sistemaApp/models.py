@@ -56,9 +56,31 @@ class Proveedor (models.Model):
      
 class OrdenCompra (models.Model):
     cantidadLote = models.IntegerField(default=1)
+    montoTotal = models.IntegerField(default=0)
     estadoOrdenCompra = models.ForeignKey(EstadoOrdenCompra, on_delete=models.PROTECT)
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='ordenes_compra')  #related_name se usa para establecer el nombre de la relación inversa desde articulo hacia OrdenCompra
     proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT)
 
     
-
+class DemandaHistorica(models.Model):
+    MESES_CHOICES = (
+        (1, 'Enero'),
+        (2, 'Febrero'),
+        (3, 'Marzo'),
+        (4, 'Abril'),
+        (5, 'Mayo'),
+        (6, 'Junio'),
+        (7, 'Julio'),
+        (8, 'Agosto'),
+        (9, 'Septiembre'),
+        (10, 'Octubre'),
+        (11, 'Noviembre'),
+        (12, 'Diciembre'),
+    )
+    YEAR_CHOICES = [(year, str(year)) for year in range(1990, 2051)]
+    mes = models.IntegerField(choices=MESES_CHOICES)
+    año = models.IntegerField(choices=YEAR_CHOICES)
+    cantidadDemanda = models.IntegerField(default=0)
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='demandas_historicas')
+    def __str__(self):
+        return f'Demanda histórica: {self.get_mes_display()} {self.año}'

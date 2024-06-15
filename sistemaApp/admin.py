@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor
+from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor,DemandaHistorica
 from django.db.models import F  # Agregar la importación de F
 from django.db.models import Exists, OuterRef
 
@@ -79,6 +79,10 @@ class ProveedorAdmin(admin.ModelAdmin):
     ordering = ('id',)
     list_display_links = ('nombreProveedor',)
          
+class DemandaHistoricaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'mes', 'año','cantidadDemanda')
+    ordering = ('id',)
+
 admin.site.register(FamiliaArticulo,FamiliaArticuloAdmin)
 #@admin.register(FamiliaArticulo)
 admin.site.register(Articulo,ArticuloAdmin)
@@ -86,7 +90,7 @@ admin.site.register(ModeloInventario)
 admin.site.register(EstadoOrdenCompra,EstadoOrdenCompraAdmin)
 admin.site.register(OrdenCompra,OrdenCompraAdmin)
 admin.site.register(Proveedor,ProveedorAdmin)
-
+admin.site.register(DemandaHistorica,DemandaHistoricaAdmin)
 
 
 
