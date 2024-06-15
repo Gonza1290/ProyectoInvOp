@@ -1,7 +1,11 @@
 from django.contrib import admin
-from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor,DemandaHistorica
+from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor,DemandaHistorica,Accione
 from django.db.models import F  # Agregar la importación de F
 from django.db.models import Exists, OuterRef
+from django.urls import reverse
+from django.utils.html import format_html
+from django.shortcuts import redirect
+
 
 class FamiliaArticuloAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre_familia', 'modeloInventario', 'fechaHoraBajaFA')
@@ -59,7 +63,7 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
             )
         
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','costoAlmacenamiento','familiaArticulo')
+    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','costoAlmacenamiento','loteOptimo','tiempoEntrePedidos','numeroPedidos','familiaArticulo','proveedor_predefinido')
     search_fields = ('id','nombreArticulo')
     ordering = ('id',)
     list_display_links = ('nombreArticulo',)
@@ -70,10 +74,6 @@ class EstadoOrdenCompraAdmin(admin.ModelAdmin):
     ordering = ('id',)
     list_display_links = ('nombreEOC',)
     
-class OrdenCompraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'cantidadLote', 'articulo','proveedor')
-    ordering = ('id',)
-
 class ProveedorAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombreProveedor', 'fechaHoraBajaP','demoraPedido','costoPorPedido')
     ordering = ('id',)
@@ -82,7 +82,53 @@ class ProveedorAdmin(admin.ModelAdmin):
 class DemandaHistoricaAdmin(admin.ModelAdmin):
     list_display = ('id', 'mes', 'año','cantidadDemanda')
     ordering = ('id',)
+    
+class OrdenCompraAdmin(admin.ModelAdmin):
+    list_display = ('id', 'cantidadLote', 'articulo','proveedor')
+    ordering = ('id',)
 
+class AccionesAdmin(admin.ModelAdmin):
+
+    def get_queryset(self, request):
+        # Obtener el queryset estándar de todos los objetos de Articulo
+        return Articulo.objects.all()
+
+    def get_list_display(self, request):
+        # Obtener la lista de campos a mostrar
+        list_display = super().get_list_display(request)
+        # Agregar el botón personalizado a la lista de campos a mostrar
+        list_display = ('nombreArticulo','stockActual','Acciones',)
+        return list_display
+
+    def Acciones(self, obj):
+        acciones_html = ''
+        acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Crear Orden de Compra</a>&nbsp;&nbsp;'.format(
+            reverse('sistemaApp:crear_orden_compra', args=[obj.id])
+        )
+        acciones_html += '<a class="btn btn-info btn-sm" href="{}">Predecir Demanda</a>&nbsp;&nbsp;'.format(
+            reverse('sistemaApp:predecir_demanda', args=[obj.id])
+        )
+        acciones_html += '<a class="btn btn-warning btn-sm" href="{}">CGI</a>'.format(
+            reverse('sistemaApp:cgi', args=[obj.id])
+        )
+        return format_html(acciones_html)
+    
+    def nombreArticulo(self, obj):
+        return obj.nombreArticulos
+    nombreArticulo.short_description = 'Nombre Articulo'
+    
+    def stockActual(self, obj):
+        return obj.stockActual
+    stockActual.short_description = 'Stock Actual'
+    
+    def has_add_permission(self, request):
+        # Devuelve False para deshabilitar la opción de añadir nuevos registros
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Devuelve False para deshabilitar la opción de eliminar registros
+        return False
+    
 admin.site.register(FamiliaArticulo,FamiliaArticuloAdmin)
 #@admin.register(FamiliaArticulo)
 admin.site.register(Articulo,ArticuloAdmin)
@@ -91,8 +137,7 @@ admin.site.register(EstadoOrdenCompra,EstadoOrdenCompraAdmin)
 admin.site.register(OrdenCompra,OrdenCompraAdmin)
 admin.site.register(Proveedor,ProveedorAdmin)
 admin.site.register(DemandaHistorica,DemandaHistoricaAdmin)
-
-
+admin.site.register(Accione,AccionesAdmin)
 
 
 

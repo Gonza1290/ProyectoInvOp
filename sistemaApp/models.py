@@ -26,6 +26,15 @@ class FamiliaArticulo (models.Model):
         self.fechaHoraBajaFA = None
         self.save()
         
+class Proveedor (models.Model):
+    nombreProveedor = models.CharField(max_length=100,unique=True)
+    fechaHoraBajaP = models.DateTimeField(default=None,null= True, blank=True) 
+    demoraPedido = models.IntegerField(default=0,null= True, blank=True)
+    costoPorPedido = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return f"{self.nombreProveedor}"
+    
 class Articulo (models.Model):
     nombreArticulo = models.CharField(max_length=100,unique=True)
     stockActual = models.IntegerField(default=0)
@@ -33,8 +42,13 @@ class Articulo (models.Model):
     puntoPedido = models.IntegerField(default=0)
     precioArticulo = models.IntegerField(default=0)
     costoAlmacenamiento = models.IntegerField(default=0)
+    loteOptimo = models.IntegerField(default=0)
+    tiempoEntrePedidos = models.IntegerField(default=0)
+    numeroPedidos = models.IntegerField(default=0)
+    
     familiaArticulo = models.ForeignKey(FamiliaArticulo, on_delete=models.PROTECT,null=True, default=None)
-
+    proveedor_predefinido = models.ForeignKey(Proveedor, on_delete=models.SET_NULL,null=True, default=None)
+    
     def __str__(self):
         return f"{self.nombreArticulo}"
     
@@ -45,14 +59,6 @@ class EstadoOrdenCompra (models.Model):
     def __str__(self):
         return f"{self.nombreEOC}"
     
-class Proveedor (models.Model):
-    nombreProveedor = models.CharField(max_length=100,unique=True)
-    fechaHoraBajaP = models.DateTimeField(default=None,null= True, blank=True) 
-    demoraPedido = models.IntegerField(default=0,null= True, blank=True)
-    costoPorPedido = models.IntegerField(default=0)
-    
-    def __str__(self):
-        return f"{self.nombreProveedor}"
      
 class OrdenCompra (models.Model):
     cantidadLote = models.IntegerField(default=1)
@@ -84,3 +90,10 @@ class DemandaHistorica(models.Model):
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='demandas_historicas')
     def __str__(self):
         return f'Demanda histórica: {self.get_mes_display()} {self.año}'
+    
+    
+    
+    #CLASES AUXILIARES
+    
+class Accione(models.Model):
+    mes = models.IntegerField()

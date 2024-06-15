@@ -10,3 +10,4 @@ python-gettext==5.0
 sqlparse==0.5.0
 virtualenv==20.24.5
 virtualenvwrapper-win==1.2.7
+django-jazzmin==3.0.0
