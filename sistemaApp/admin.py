@@ -84,8 +84,26 @@ class DemandaHistoricaAdmin(admin.ModelAdmin):
     ordering = ('id',)
     
 class OrdenCompraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'cantidadLote', 'articulo','proveedor')
+    list_display = ('id', 'articulo', 'cantidadLote','estadoOrdenCompra','proveedor')
     ordering = ('id',)
+
+    def has_add_permission(self, request):
+        # Devuelve False para deshabilitar la opción de añadir nuevos registros
+        return False
+    
+    def get_list_display(self, request):
+        # Obtener la lista de campos a mostrar
+        list_display = super().get_list_display(request)
+        # Agregar el botón personalizado a la lista de campos a mostrar
+        list_display += ('Acciones',)
+        return list_display
+
+    def Acciones(self, obj):
+        acciones_html = ''
+        acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Marcar como recibido</a>&nbsp;&nbsp;'.format(
+            reverse('sistemaApp:marcar_orden_recibida', args=[obj.id])
+        )
+        return format_html(acciones_html)
 
 class AccionesAdmin(admin.ModelAdmin):
 
@@ -128,6 +146,11 @@ class AccionesAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         # Devuelve False para deshabilitar la opción de eliminar registros
         return False
+    
+    def has_change_permission(self, request, obj=None):
+        # Devuelve False para deshabilitar la opción de modificar instancias existentes
+        return False
+
     
 admin.site.register(FamiliaArticulo,FamiliaArticuloAdmin)
 #@admin.register(FamiliaArticulo)
