@@ -1,0 +1,141 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block sidebar %}
+<aside class="main-sidebar elevation-4 sidebar-dark-primary">
+    <!-- Brand Logo -->
+    <a href="/admin/" class="brand-link">
+        <img src="{% static 'vendor/adminlte/img/AdminLTELogo.png' %}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
+            style="opacity: .8">
+        <span class="brand-text font-weight-light">Django administration</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel (optional) -->
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <i class="fas fa-inverse user-profile fa-user-circle"></i>
+            </div>
+            <div class="info">
+                <a href="/admin/auth/user/1/change/" class="d-block">admin</a>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
+                data-accordion="false">
+                <li class="nav-item">
+                    <a href="/admin/" class="nav-link">
+                        <i class="nav-icon fas fa-th-large"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+
+                <li class="nav-header">Authentication and Authorization</li>
+                <li class="nav-item">
+                    <a href="/admin/auth/group/" class="nav-link">
+                        <i class="nav-icon fas fa-users"></i> <p>Groups</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/auth/user/" class="nav-link">
+                        <i class="nav-icon fas fa-user"></i> <p>Users</p>
+                    </a>
+                </li>
+
+                <li class="nav-header">Sistemaapp</li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/accione/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Acciones</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/articulo/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Articulos</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/demandahistorica/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Demanda historicas</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/estadoordencompra/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Estado orden compras</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/familiaarticulo/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Familia articulos</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/modeloinventario/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Modelo inventarios</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/ordencompra/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Orden compras</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/sistemaApp/proveedor/" class="nav-link">
+                        <i class="nav-icon fas fa-circle"></i> <p>Proveedores</p>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1>Metodos Prediccion Demanda</h1>
+                <div class="btn-group mb-3" role="group">
+                    <form method="post" style="display: inline-block; margin-right: 10px;">
+                        {% csrf_token %}
+                        <input type="submit" name="Boton1" value="Promedio Movil" class="btn {% if formulario_seleccionado == 'PromedioMovil' %}btn-primary active{% else %}btn-secondary{% endif %}">
+                    </form>
+                    
+                    <form method="post" style="display: inline-block; margin-right: 10px;">
+                        {% csrf_token %}
+                        <input type="submit" name="Boton2" value="Promedio Movil Ponderado" class="btn {% if formulario_seleccionado == 'PromedioMovilPonderado' %}btn-primary active{% else %}btn-secondary{% endif %}">
+                    </form>
+                    
+                    <form method="post" style="display: inline-block; margin-right: 10px;">
+                        {% csrf_token %}
+                        <input type="submit" name="Boton3" value="Suavizacion Exponencial" class="btn {% if formulario_seleccionado == 'SuavizacionExponencial' %}btn-primary active{% else %}btn-secondary{% endif %}">
+                    </form>
+                    
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            {% if formulario_seleccionado == 'PromedioMovilPonderado' and periodos %}
+                                {% for i in "123456789"|slice:periodos %}
+                                    <div class="form-group">
+                                        <label for="id_ponderacion_{{ i }}">Ponderación {{ i }}</label>
+                                        <input type="number" name="ponderacion_{{ i }}" step="0.01" class="form-control" id="id_ponderacion_{{ i }}">
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            <button type="submit" class="btn btn-success">Enviar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

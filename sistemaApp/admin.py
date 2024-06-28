@@ -124,7 +124,7 @@ class AccionesAdmin(admin.ModelAdmin):
             reverse('sistemaApp:crear_orden_compra', args=[obj.id])
         )
         acciones_html += '<a class="btn btn-info btn-sm" href="{}">Predecir Demanda</a>&nbsp;&nbsp;'.format(
-            reverse('sistemaApp:predecir_demanda', args=[obj.id])
+            reverse('sistemaApp:predecir_demanda_view', args=[obj.id])
         )
         acciones_html += '<a class="btn btn-warning btn-sm" href="{}">CGI</a>'.format(
             reverse('sistemaApp:cgi', args=[obj.id])

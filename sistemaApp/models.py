@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib import admin
+
 # Create your models here.
 
 class ModeloInventario (models.Model):
@@ -93,7 +94,13 @@ class DemandaHistorica(models.Model):
     
     
     
-    #CLASES AUXILIARES
-    
+#CLASES AUXILIARES
 class Accione(models.Model):
     mes = models.IntegerField()
+    
+    
+#Enumeracion para el tipo error prediccion
+class ErrorType(models.TextChoices):
+    MAD = 'Desviación Absoluta Media'
+    MSE = 'Error Cuadrado Medio'
+    MAPE = 'Error Porcentual Absoluto Medio'
