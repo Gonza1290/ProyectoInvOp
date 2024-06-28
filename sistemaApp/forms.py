@@ -1,6 +1,6 @@
 from django import forms
 from .models import OrdenCompra,ErrorType
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 #Formulario OrdenCompra
 class OrdenCompraForm(forms.ModelForm):
     class Meta:
@@ -26,10 +26,10 @@ class PromedioMovilForm(forms.Form):
         choices=ErrorType.choices,
         initial=ErrorType.MAD  # initial en lugar de default
     )
-    errorAceptable = forms.DecimalField(
+    errorAceptable = forms.IntegerField(
         label='Error Aceptable (%)',
-        max_digits=2, decimal_places=2,  # Ajusta según tus necesidades de precisión
-        initial=5.0  # Valor inicial del porcentaje aceptable
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text='Ingrese un valor entre 1 y 100'
     )
 
 class PromedioMovilPonderadoForm(forms.Form):
@@ -39,6 +39,30 @@ class PromedioMovilPonderadoForm(forms.Form):
         choices=ErrorType.choices,
         initial=ErrorType.MAD
     )
+    ponderaciones = forms.CharField(
+        label='Ponderacion de Periodos Históricos Considerados',
+        help_text='Ingrese los periodos separados por comas (ej. 1,2,3,4,5)',
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    errorAceptable = forms.IntegerField(
+        label='Error Aceptable (%)',
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text='Ingrese un valor entre 1 y 100'
+    )
+    def clean_ponderaciones(self):
+        ponderaciones = self.cleaned_data.get('ponderaciones')
+        
+        if isinstance(ponderaciones, int):
+            ponderaciones = str(ponderaciones)  # Convertir a cadena si es un entero
+        
+        try:
+            ponderaciones = [int(periodo.strip()) for periodo in ponderaciones.split(',')]
+        except AttributeError:
+            raise forms.ValidationError('Ingrese valores numéricos separados por comas.')
+        except ValueError:
+            raise forms.ValidationError('Ingrese valores numéricos separados por comas válidos.')
+
+        return ponderaciones
 
 class SuavizacionExponencialForm(forms.Form):
     prediccionDemanda = forms.IntegerField(label='Predicción Demanda Último Periodo')

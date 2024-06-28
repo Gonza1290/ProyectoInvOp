@@ -92,12 +92,9 @@ class DemandaHistorica(models.Model):
     def __str__(self):
         return f'Demanda histórica: {self.get_mes_display()} {self.año}'
     
-    
-    
 #CLASES AUXILIARES
 class Accione(models.Model):
     mes = models.IntegerField()
-    
     
 #Enumeracion para el tipo error prediccion
 class ErrorType(models.TextChoices):

@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
-from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica
+from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica,ErrorType
 from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm
 from django import forms
 from datetime import datetime
@@ -47,77 +47,112 @@ def marcar_orden_recibida(request,orden_compra_id):
 
 #Modulo Demanda
 def predecir_demanda_view(request,articulo_id):
-    formulario_seleccionado = 'PromedioMovil'  # Metodo por defecto
+    # Obtener el formulario seleccionado de la sesión o usar uno predefinido
+    formulario_seleccionado = request.session.get('formulario_seleccionado', 'PromedioMovil')
     form = PromedioMovilForm()
 
-    #Si se acciona Boton 1
     if 'Boton1' in request.POST:
         formulario_seleccionado = 'PromedioMovil'
-        form = PromedioMovilForm()
-        context = {'formulario_seleccionado': formulario_seleccionado,'form': form,}
-        return render(request, 'demanda_opciones.html', context)
-    #Si se acciona Boton 2
-    if 'Boton2' in request.POST:
-        formulario_seleccionado = 'PromedioMovilPonderado'
-        form = PromedioMovilPonderadoForm()
-        context = {'formulario_seleccionado': formulario_seleccionado,'form': form,}
-        return render(request, 'demanda_opciones.html', context)
-    #Si se acciona Boton 3
-    if 'Boton3' in request.POST:
-        formulario_seleccionado = 'SuavizacionExponencial'
-        form = SuavizacionExponencialForm()
-        context = {'formulario_seleccionado': formulario_seleccionado,'form': form,}
-        return render(request, 'demanda_opciones.html', context)
+        form = PromedioMovilForm(request.POST)
+         # Guardar en la sesión
+        request.session['formulario_seleccionado'] = formulario_seleccionado
         
-    #SI ES UN POST
+
+    elif 'Boton2' in request.POST:
+        formulario_seleccionado = 'PromedioMovilPonderado'
+        form = PromedioMovilPonderadoForm(request.POST)
+         # Guardar en la sesión
+        request.session['formulario_seleccionado'] = formulario_seleccionado
+
+    elif 'Boton3' in request.POST:
+        formulario_seleccionado = 'SuavizacionExponencial'
+        form = SuavizacionExponencialForm(request.POST)
+         # Guardar en la sesión
+        request.session['formulario_seleccionado'] = formulario_seleccionado
+
+
+     # Si es un POST
     if request.method == 'POST':
         if formulario_seleccionado == 'PromedioMovil':
             form = PromedioMovilForm(request.POST)
             if form.is_valid():
                 periodos = form.cleaned_data['periodosConsiderados']
                 mes_actual = datetime.now().month
-                rango_meses= range(mes_actual-periodos+1,mes_actual+1)
-                demanda_historicas = DemandaHistorica.objects.filter(mes__in =rango_meses,articulo=articulo_id)
-                
+                rango_meses = range(mes_actual - periodos + 1, mes_actual + 1)
+                demanda_historicas = DemandaHistorica.objects.filter(mes__in=rango_meses, articulo=articulo_id)
+
                 if demanda_historicas.count() != periodos:
                     messages.error(request, "Cantidad de Demandas Historicas insuficientes")
                 else:
-                    demanda_predecida=0
-                    for demanda_historica in demanda_historicas:
-                        demanda_predecida += demanda_historica.cantidadDemanda
-                    
-                    demanda_predecida = demanda_predecida/ demanda_historicas.count()
+                    demanda_predecida = sum(demanda_historica.cantidadDemanda for demanda_historica in demanda_historicas) / periodos
+                    metodo_error = form.cleaned_data['metodoError']
+                    demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
+                    error_aceptable = form.cleaned_data['errorAceptable']
+
+                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error)
+
                     resultados = {
                         'demanda_predecida': demanda_predecida,
+                        'error_calculado': error_calculado,
+                        'error_aceptable': error_aceptable,
+                        'diferencia_real_pronostico': diferencia_real_pronostico,
+                        'decision': decision,
                     }
                     return render(request, 'resultados_prediccion.html', resultados)
-            
+
         elif formulario_seleccionado == 'PromedioMovilPonderado':
             form = PromedioMovilPonderadoForm(request.POST)
             if form.is_valid():
                 periodos = form.cleaned_data['periodosConsiderados']
-                # Generar dinámicamente campos adicionales
-                for i in range(1, periodos + 1):
-                    form.fields[f'ponderacion_{i}'] = forms.FloatField(label=f'Ponderación {i}')
-                context = {
-                    'formulario_seleccionado': formulario_seleccionado,
-                    'form': form,
-                }
-                
-                #submit_form nos indica el envio final del form
-                if 'submit_form' in request.POST:
-                    # Validar nuevamente el formulario completo
-                    form = PromedioMovilPonderadoForm(request.POST)
-                    if form.is_valid():
-                        # Procesar los datos del formulario
-                        return messages.success('Datos procesados correctamente')  
-                    
-        elif formulario_seleccionado == 'SuavizacionExponencial':
-            form = SuavizacionExponencialForm(request.POST)
+                ponderaciones = form.cleaned_data['ponderaciones']
+                mes_actual = datetime.now().month
+                rango_meses = range(mes_actual - periodos + 1, mes_actual + 1)
+                demanda_historicas = DemandaHistorica.objects.filter(mes__in=rango_meses, articulo=articulo_id)
 
-    #SI ES UN GET
+                if demanda_historicas.count() != periodos:
+                    messages.error(request, "Cantidad de Demandas Historicas insuficientes")
+                elif periodos != len(ponderaciones):
+                    messages.error(request, "Cantidad de Ponderaciones y Periodos distintos")
+                else:
+                    demanda_predecida = sum(demanda_historica.cantidadDemanda * ponderacion for demanda_historica, ponderacion in zip(demanda_historicas, ponderaciones)) / sum(ponderaciones)
+                    metodo_error = form.cleaned_data['metodoError']
+                    demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
+                    error_aceptable = form.cleaned_data['errorAceptable']
+
+                    demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
+
+                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error)
+                    resultados = {
+                        'demanda_predecida': demanda_predecida,
+                        'error_calculado': error_calculado,
+                        'error_aceptable': error_aceptable,
+                        'diferencia_real_pronostico': diferencia_real_pronostico,
+                        'decision': decision,
+                    }
+                    return render(request, 'resultados_prediccion.html', resultados)
+    if form.errors:
+        for field in form.errors:
+            form.errors[field] = [error for error in form.errors[field] if error != 'This field is required.']
+    # Si es un GET o si ninguno de los formularios fue válido
     context = {
         'formulario_seleccionado': formulario_seleccionado,
         'form': form,
     }
     return render(request, 'demanda_opciones.html', context)
+
+
+def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_error):
+    if metodo_error == ErrorType.MAD:
+        error_calculado = abs(demanda_real_proxima - demanda_predecida)
+    elif metodo_error == ErrorType.MSE:
+        error_calculado = (demanda_real_proxima - demanda_predecida) ** 2
+    else:
+        error_calculado = (abs(demanda_real_proxima - demanda_predecida)/ demanda_real_proxima)*100
+
+    diferencia_real_pronostico = (abs(demanda_real_proxima - demanda_predecida)/ demanda_real_proxima)*100
+    if error_aceptable >= diferencia_real_pronostico:
+        decision = 'Aceptado'
+    else:
+        decision = 'Rechazado'
+
+    return error_calculado, decision,diferencia_real_pronostico

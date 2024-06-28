@@ -125,12 +125,12 @@
                             {% if formulario_seleccionado == 'PromedioMovilPonderado' and periodos %}
                                 {% for i in "123456789"|slice:periodos %}
                                     <div class="form-group">
-                                        <label for="id_ponderacion_{{ i }}">Ponderación {{ i }}</label>
-                                        <input type="number" name="ponderacion_{{ i }}" step="0.01" class="form-control" id="id_ponderacion_{{ i }}">
+                                        <label for="id_ponderacion_{{ forloop.counter }}">Ponderación {{ forloop.counter }}</label>
+                                        <input type="number" name="ponderacion_{{ forloop.counter }}" step="0.01" class="form-control" id="id_ponderacion_{{ forloop.counter }}">
                                     </div>
                                 {% endfor %}
                             {% endif %}
-                            <button type="submit" class="btn btn-success">Enviar</button>
+                            <button type="submit" name="submit_form" class="btn btn-success">Enviar</button>
                         </form>
                     </div>
                 </div>
