@@ -66,4 +66,14 @@ class PromedioMovilPonderadoForm(forms.Form):
 
 class SuavizacionExponencialForm(forms.Form):
     prediccionDemanda = forms.IntegerField(label='Predicción Demanda Último Periodo')
-    coefSuavizacion = forms.IntegerField(label='Coeficiente de Suavización')
+    coefSuavizacion = forms.DecimalField(label='Coeficiente de Suavización',min_value=0.0,max_value=1.0,initial=0.05)
+    metodoError = forms.ChoiceField(
+        label='Método de error a usar',
+        choices=ErrorType.choices,
+        initial=ErrorType.MAD
+    )
+    errorAceptable = forms.IntegerField(
+        label='Error Aceptable (%)',
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text='Ingrese un valor entre 1 y 100'
+    )

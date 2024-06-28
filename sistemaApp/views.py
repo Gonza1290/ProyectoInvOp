@@ -56,7 +56,6 @@ def predecir_demanda_view(request,articulo_id):
         form = PromedioMovilForm(request.POST)
          # Guardar en la sesión
         request.session['formulario_seleccionado'] = formulario_seleccionado
-        
 
     elif 'Boton2' in request.POST:
         formulario_seleccionado = 'PromedioMovilPonderado'
@@ -130,6 +129,29 @@ def predecir_demanda_view(request,articulo_id):
                         'decision': decision,
                     }
                     return render(request, 'resultados_prediccion.html', resultados)
+        elif formulario_seleccionado == 'SuavizacionExponencial':
+            form = SuavizacionExponencialForm(request.POST)
+            if form.is_valid():
+                mes_actual = datetime.now().month
+                demanda_real = DemandaHistorica.objects.get(mes=mes_actual-1).cantidadDemanda
+                ultima_prediccion_demanda = form.cleaned_data['prediccionDemanda']
+                coef_suavizacion = form.cleaned_data['coefSuavizacion']
+                demanda_predecida= ultima_prediccion_demanda + coef_suavizacion*(demanda_real-ultima_prediccion_demanda)
+
+                metodo_error = form.cleaned_data['metodoError']
+                demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
+                error_aceptable = form.cleaned_data['errorAceptable']
+                error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error)
+                resultados = {
+                        'demanda_predecida': demanda_predecida,
+                        'error_calculado': error_calculado,
+                        'error_aceptable': error_aceptable,
+                        'diferencia_real_pronostico': diferencia_real_pronostico,
+                        'decision': decision,
+                    }
+                return render(request, 'resultados_prediccion.html', resultados)
+        else:
+            messages.error('formulario invalido')
     if form.errors:
         for field in form.errors:
             form.errors[field] = [error for error in form.errors[field] if error != 'This field is required.']
