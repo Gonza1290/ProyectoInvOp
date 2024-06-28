@@ -80,7 +80,7 @@ class ProveedorAdmin(admin.ModelAdmin):
     list_display_links = ('nombreProveedor',)
          
 class DemandaHistoricaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'mes', 'año','cantidadDemanda')
+    list_display = ('id', 'mes', 'año','cantidadDemanda','articulo')
     ordering = ('id',)
     
 class OrdenCompraAdmin(admin.ModelAdmin):
