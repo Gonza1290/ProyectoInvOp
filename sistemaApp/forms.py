@@ -1,13 +1,14 @@
 from django import forms
-from .models import OrdenCompra,Articulo
+from .models import OrdenCompra
 
 class OrdenCompraForm(forms.ModelForm):
     class Meta:
         model = OrdenCompra
-        fields = ['cantidadLote', 'proveedor']
+        fields = ['cantidadLote', 'proveedor', 'articulo']  
 
     def __init__(self, *args, **kwargs):
-        super(OrdenCompraForm,self).__init__(*args, **kwargs)
-        
-        #Proveedor por defecto
-        self.fields['proveedor'].initial = instance.proveedor_predefinido.nombreProveedor
+        super(OrdenCompraForm, self).__init__(*args, **kwargs)
+        if 'initial' in kwargs:
+            initial = kwargs['initial']
+            self.fields['articulo'].initial = initial.get('articulo')
+            self.fields['proveedor'].initial = initial.get('proveedor')
