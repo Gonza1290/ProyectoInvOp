@@ -6,7 +6,7 @@ Descripción Técnica del Sistema de Inventarios
 Introducción
 El sistema de inventarios está diseñado para gestionar y optimizar el inventario de artículos utilizando métodos de predicción de demanda y modelos de gestión de inventarios. Este sistema permite realizar predicciones de demanda a través de métodos estadísticos como Promedio Móvil, Promedio Móvil Ponderado y Suavización Exponencial, y calcula el Costo de Gestión de Inventario (CGI) mediante los modelos de inventario por Lote Fijo e Intervalo Fijo. A continuación, se detallan los módulos principales del sistema y sus funcionalidades.
 
-1. Maestro de Artículos
+1. Modulo Maestro de Artículos
    
 Alta tabla Artículos:
 Coherencia en la codificación: El sistema garantiza que no haya duplicación de códigos de artículos, manteniendo la unicidad y consistencia de los datos.
@@ -18,7 +18,7 @@ Baja tabla Artículos: Controla la baja de artículos, impidiendo la eliminació
 Informes tabla Artículos:
 Listado de Productos Terminados (Prod Term)
 
-2. Inventario
+2. Modulo Inventario
    
 Determinación del Modelo de Inventario por familia de artículo
 
@@ -50,7 +50,7 @@ Listado de productos Faltantes
 
 Genera un listado de los productos que hayan alcanzado el stock de seguridad (o estén por debajo).
 
-3. Orden de Compra
+3. Modulo Orden de Compra
    
 Alta de Órdenes de Compra: El sistema sugiere el proveedor predeterminado y el tamaño del lote, pero permite modificaciones.
 
@@ -58,7 +58,7 @@ Verificación de existencia de otra orden activa: Informa al usuario si existe o
 
 Al finalizar la orden el sistema debe actualizar el inventario del producto que se ordenó
 
-4. Demanda
+4. Modulo Demanda
 
 Permite Alta, Baja y Modificación (A/B/M) de demandas históricas por artículo y periodo.
 Carga de Parámetros Generales del módulo
