@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
 from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica,ErrorType
-from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm
+from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm,ModeloLoteFijoForm,ModeloIntervaloFijoForm
 from django import forms
 from datetime import datetime
 
@@ -88,7 +88,7 @@ def predecir_demanda_view(request,articulo_id):
                     demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
                     error_aceptable = form.cleaned_data['errorAceptable']
 
-                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error)
+                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error,articulo_id)
 
                     resultados = {
                         'demanda_predecida': demanda_predecida,
@@ -120,7 +120,7 @@ def predecir_demanda_view(request,articulo_id):
 
                     demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
 
-                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error)
+                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error,articulo_id)
                     resultados = {
                         'demanda_predecida': demanda_predecida,
                         'error_calculado': error_calculado,
@@ -141,17 +141,19 @@ def predecir_demanda_view(request,articulo_id):
                 metodo_error = form.cleaned_data['metodoError']
                 demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
                 error_aceptable = form.cleaned_data['errorAceptable']
-                error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error)
+                error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error,articulo_id)
                 resultados = {
-                        'demanda_predecida': demanda_predecida,
-                        'error_calculado': error_calculado,
-                        'error_aceptable': error_aceptable,
-                        'diferencia_real_pronostico': diferencia_real_pronostico,
-                        'decision': decision,
-                    }
+                    'demanda_predecida': demanda_predecida,
+                    'error_calculado': error_calculado,
+                    'error_aceptable': error_aceptable,
+                    'diferencia_real_pronostico': diferencia_real_pronostico,
+                    'decision': decision,
+                }
                 return render(request, 'resultados_prediccion.html', resultados)
         else:
             messages.error('formulario invalido')
+            
+    #Sacar los field is required del form
     if form.errors:
         for field in form.errors:
             form.errors[field] = [error for error in form.errors[field] if error != 'This field is required.']
@@ -162,8 +164,8 @@ def predecir_demanda_view(request,articulo_id):
     }
     return render(request, 'demanda_opciones.html', context)
 
-
-def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_error):
+#Funcion para calcular error de prediccion demanda
+def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_error,articulo_id):
     if metodo_error == ErrorType.MAD:
         error_calculado = abs(demanda_real_proxima - demanda_predecida)
     elif metodo_error == ErrorType.MSE:
@@ -174,7 +176,150 @@ def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_
     diferencia_real_pronostico = (abs(demanda_real_proxima - demanda_predecida)/ demanda_real_proxima)*100
     if error_aceptable >= diferencia_real_pronostico:
         decision = 'Aceptado'
+        #Guardar demanda predecida
+        articulo= Articulo.objects.get(pk= articulo_id)
+        articulo.demandaPredecida = demanda_predecida
+        articulo.save()
     else:
         decision = 'Rechazado'
 
     return error_calculado, decision,diferencia_real_pronostico
+
+
+def cgi_view(request,articulo_id):
+    #Obtengo el articulo
+    articulo = Articulo.objects.get(pk=articulo_id)
+    # Obtener el modelo predefinido para el articulo
+    modelo_inventario_seleccionado = articulo.familiaArticulo.modeloInventario.nombreMI
+    
+    if modelo_inventario_seleccionado == 'Modelo Lote Fijo':
+        form = ModeloLoteFijoForm()
+    else :
+        form = ModeloIntervaloFijoForm()
+
+    # Si es un POST
+    if request.method == 'POST':
+        if modelo_inventario_seleccionado == 'Modelo Lote Fijo':
+            form = ModeloLoteFijoForm(request.POST)
+            if form.is_valid():
+                demanda_anual = form.cleaned_data['demandaAnual']
+                dias_laborales_anual = form.cleaned_data['diasLaboralesAnual']
+                costo_almacentamiento= articulo.costoAlmacenamiento
+                costo_pedido= articulo.proveedor_predefinido.costoPorPedido
+                demora_proveedor= articulo.proveedor_predefinido.demoraPedido
+                #Calculo
+                lote_optimo= round((2*demanda_anual*(costo_pedido/costo_almacentamiento))**0.5)
+                demanda_diaria= round(demanda_anual/dias_laborales_anual)
+                punto_pedido= demanda_diaria*demora_proveedor
+                numero_pedidos= round(demanda_anual / lote_optimo)
+                tiempo_entre_pedidos= round(dias_laborales_anual/numero_pedidos)
+
+                #Calculo CGI
+                costo_compra = articulo.precioArticulo * demanda_anual
+                costo_almacentamiento_total = costo_almacentamiento * (lote_optimo/2)
+                costo_pedido_total= costo_pedido * (demanda_anual/lote_optimo)
+                cgi = costo_compra + costo_almacentamiento_total + costo_pedido_total
+                
+                resultados = {
+                    'demanda_anual': demanda_anual,
+                    'demanda_diaria': demanda_diaria,
+                    'costo_almacentamiento': costo_almacentamiento,
+                    'costo_pedido': costo_pedido,
+                    'lote_optimo': lote_optimo,
+                    'punto_pedido': punto_pedido,
+                    'numero_pedidos': numero_pedidos,
+                    'tiempo_entre_pedidos': tiempo_entre_pedidos,
+                    'cgi': cgi,
+                }
+                
+                #Guardar Resultados
+                articulo.loteOptimo = lote_optimo
+                articulo.puntoPedido = punto_pedido
+                articulo.numeroPedidos= numero_pedidos
+                articulo.tiempoEntrePedidos = tiempo_entre_pedidos
+                articulo.save()
+                return render(request, 'resultados_cgi.html', resultados)
+            
+        elif modelo_inventario_seleccionado == 'Modelo Intervalo Fijo':
+            form = ModeloIntervaloFijoForm(request.POST)
+            if form.is_valid():
+                demanda_anual = form.cleaned_data['demandaAnual']
+                dias_laborales_anual = form.cleaned_data['diasLaboralesAnual']
+                tasa_produccion_anual = form.cleaned_data['tasaProduccionAnual']
+                costo_almacentamiento= articulo.costoAlmacenamiento
+                costo_pedido= form.cleaned_data['costoOrdenProduccion']
+                demora_proveedor= articulo.proveedor_predefinido.demoraPedido
+                #Calculo
+                lote_optimo= round((2*demanda_anual*(costo_pedido/costo_almacentamiento)*(1/(1 - demanda_anual/tasa_produccion_anual)))**0.5)
+                demanda_diaria= round(demanda_anual/dias_laborales_anual)
+                punto_pedido= demanda_diaria*demora_proveedor
+                numero_pedidos= round(demanda_anual / lote_optimo)
+                tiempo_entre_pedidos= round(((2/demanda_anual)*(costo_pedido/costo_almacentamiento)*(1/(1 - demanda_anual/tasa_produccion_anual)))**0.5)
+                
+                #Calculo CGI
+                costo_compra = articulo.precioArticulo * demanda_anual
+                costo_almacentamiento_total = costo_almacentamiento * (lote_optimo/2)
+                costo_pedido_total= costo_pedido * (demanda_anual/lote_optimo)
+                cgi = costo_compra + costo_almacentamiento_total + costo_pedido_total
+                
+                resultados = {
+                    'demanda_anual': demanda_anual,
+                    'demanda_diaria': demanda_diaria,
+                    'costo_almacentamiento': costo_almacentamiento,
+                    'costo_pedido': costo_pedido,
+                    'lote_optimo': lote_optimo,
+                    'punto_pedido': punto_pedido,
+                    'numero_pedidos': numero_pedidos,
+                    'tiempo_entre_pedidos': tiempo_entre_pedidos,
+                    'cgi': cgi,
+                }
+                
+                #Guardar Resultados
+                articulo.loteOptimo = lote_optimo
+                articulo.puntoPedido = punto_pedido
+                articulo.numeroPedidos= numero_pedidos
+                articulo.tiempoEntrePedidos = tiempo_entre_pedidos
+                articulo.save()
+                return render(request, 'resultados_cgi.html', resultados)
+
+    #Sacar los field is required del form
+    if form.errors:
+        for field in form.errors:
+            form.errors[field] = [error for error in form.errors[field] if error != 'This field is required.']
+    # Si es un GET o si ninguno de los formularios fue válido
+    context = {
+        'modelo_inventario_seleccionado': modelo_inventario_seleccionado,
+        'form': form,
+    }
+    return render(request, 'cgi_view.html', context)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #Obtengo el articulo
+    articulo = Articulo.objects.get(pk=articulo_id)
+    modelo_inventario = articulo.familiaArticulo.modeloInventario.nombreMI
+    if modelo_inventario == 'Modelo Lote Fijo':
+        demanda_predecida = articulo.demandaPredecida
+        costo_almacentamiento= articulo.costoAlmacenamiento
+        costo_pedido= articulo.proveedor_predefinido.costoPorPedido
+        demora_proveedor= articulo.proveedor_predefinido.demoraPedido
+        lote_optimo= (2*demanda_predecida*(costo_pedido/costo_almacentamiento))**0,5
+        dias_habiles_mesual=30
+        demanda_diaria= demanda_predecida/dias_habiles_mesual
+        punto_pedido= demanda_diaria*demora_proveedor
+        
+        return redirect('/admin/sistemaApp/accione/')
+    elif modelo_inventario == 'Modelo Intervalo Fijo':
+        return redirect('/admin/sistemaApp/accione/')
+    else:
+        return redirect('/admin/sistemaApp/accione/')

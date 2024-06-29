@@ -63,7 +63,7 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
             )
         
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','costoAlmacenamiento','loteOptimo','tiempoEntrePedidos','numeroPedidos','familiaArticulo','proveedor_predefinido')
+    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','costoAlmacenamiento','loteOptimo','tiempoEntrePedidos','numeroPedidos','demandaPredecida','familiaArticulo','proveedor_predefinido')
     search_fields = ('id','nombreArticulo')
     ordering = ('id',)
     list_display_links = ('nombreArticulo',)

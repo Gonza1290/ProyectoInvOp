@@ -46,6 +46,7 @@ class Articulo (models.Model):
     loteOptimo = models.IntegerField(default=0)
     tiempoEntrePedidos = models.IntegerField(default=0)
     numeroPedidos = models.IntegerField(default=0)
+    demandaPredecida = models.IntegerField(default=0)
     
     familiaArticulo = models.ForeignKey(FamiliaArticulo, on_delete=models.PROTECT,null=True, default=None)
     proveedor_predefinido = models.ForeignKey(Proveedor, on_delete=models.SET_NULL,null=True, default=None)
