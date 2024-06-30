@@ -3,8 +3,7 @@
 
 Descripción Técnica del Sistema de Inventarios
 
-Introducción
-El sistema de inventarios está diseñado para gestionar y optimizar el inventario de artículos utilizando métodos de predicción de demanda y modelos de gestión de inventarios. Este sistema permite realizar predicciones de demanda a través de métodos estadísticos como Promedio Móvil, Promedio Móvil Ponderado y Suavización Exponencial, y calcula el Costo de Gestión de Inventario (CGI) mediante los modelos de inventario por Lote Fijo e Intervalo Fijo. A continuación, se detallan los módulos principales del sistema y sus funcionalidades.
+Este proyecto consiste en un sistema de inventarios que está diseñado para gestionar y optimizar el inventario de artículos utilizando métodos de predicción de demanda y modelos de gestión de inventarios. Este sistema permite realizar predicciones de demanda a través de métodos estadísticos como Promedio Móvil, Promedio Móvil Ponderado y Suavización Exponencial, y calcula el Costo de Gestión de Inventario (CGI) mediante los modelos de inventario por Lote Fijo e Intervalo Fijo. A continuación, se detallan los módulos principales del sistema y sus funcionalidades.
 
 1. Modulo Maestro de Artículos
    
