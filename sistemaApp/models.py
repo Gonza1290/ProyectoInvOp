@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.contrib import admin
+from datetime import datetime
 
 # Create your models here.
 
@@ -69,6 +70,11 @@ class OrdenCompra (models.Model):
     articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='ordenes_compra')  #related_name se usa para establecer el nombre de la relación inversa desde articulo hacia OrdenCompra
     proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT)
 
+class OrdenVenta (models.Model):
+    cantidadVendida = models.IntegerField(default=1)
+    montoTotal = models.IntegerField(default=0)
+    fechaHoraVenta = models.DateField(default=None,null= True, blank=True) 
+    articulo = models.ForeignKey(Articulo, on_delete=models.CASCADE, related_name='ordenes_venta')  #related_name se usa para establecer el nombre de la relación inversa desde articulo hacia OrdenVenta
     
 class DemandaHistorica(models.Model):
     MESES_CHOICES = (

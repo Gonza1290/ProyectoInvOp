@@ -1,4 +1,3 @@
-
 {% extends "admin/base_site.html" %}
 {% load static %}
 
@@ -23,33 +22,32 @@
             </div>
         </div>
 
-    <!-- Sidebar Menu -->
-    <nav class="mt-2">
-        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-            <li class="nav-item">
-                <a href="/admin/" class="nav-link">
-                    <i class="nav-icon fas fa-th-large"></i>
-                    <p>Dashboard</p>
-                </a>
-            </li>
-            {% for app in admin_app_list %}
-                <li class="nav-header">{{ app.name }}</li>
-                {% for model in app.models %}
-                    <li class="nav-item">
-                        <a href="{{ model.url }}" class="nav-link">
-                            <i class="nav-icon fas fa-circle"></i> <p>{{ model.name }}</p>
-                        </a>
-                    </li>
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <li class="nav-item">
+                    <a href="/admin/" class="nav-link">
+                        <i class="nav-icon fas fa-th-large"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+                {% for app in admin_app_list %}
+                    <li class="nav-header">{{ app.name }}</li>
+                    {% for model in app.models %}
+                        <li class="nav-item">
+                            <a href="{{ model.url }}" class="nav-link">
+                                <i class="nav-icon fas fa-circle"></i> <p>{{ model.name }}</p>
+                            </a>
+                        </li>
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
-        </ul>
-    </nav>
-    <!-- /.sidebar-menu -->
-</div>
-<!-- /.sidebar -->
+            </ul>
+        </nav>
+        <!-- /.sidebar-menu -->
+    </div>
+    <!-- /.sidebar -->
 </aside>
 {% endblock %}
-
 
 {% block content %}
 <div class="content">
@@ -57,14 +55,14 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-md-auto d-flex flex-grow-1 align-items-center">
-                    <h1 class="h4 m-0 pr-3 mr-3 border-right"> Orden de Compra </h1>
+                    <h1 class="h4 m-0 pr-3 mr-3 border-right"> Orden de Venta </h1>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="/admin/">Home</a></li>
                         <li class="breadcrumb-item"><a href="/admin/sistemaApp/">SistemaApp</a></li>
                         <li class="breadcrumb-item">
                             <a href="/admin/sistemaApp/ordencompra/" class="active">Órdenes de Compra</a>
                         </li>
-                        <li class="breadcrumb-item active">Añadir Orden de Compra</li>
+                        <li class="breadcrumb-item active">Añadir Orden de Venta</li>
                     </ol>
                 </div>
             </div>
@@ -85,22 +83,11 @@
                                             {{ form.non_field_errors }}
                                             <div class="form-group field-cantidadLote">
                                                 <div class="row">
-                                                    <label class="col-sm-3 text-left" for="id_cantidadLote">Cantidad del Lote <span class="text-red">*</span></label>
+                                                    <label class="col-sm-3 text-left" for="id_cantidadLote">Cantidad Vendida<span class="text-red">*</span></label>
                                                     <div class="col-sm-7">
-                                                        {{ form.cantidadLote }}
+                                                        {{ form.cantidadVendida }}
                                                         <div class="help-block red">
                                                             {{ form.cantidadLote.errors }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="form-group field-proveedor">
-                                                <div class="row">
-                                                    <label class="col-sm-3 text-left" for="id_proveedor">Proveedor <span class="text-red">*</span></label>
-                                                    <div class="col-sm-7">
-                                                        {{ form.proveedor }}
-                                                        <div class="help-block red">
-                                                            {{ form.proveedor.errors }}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -139,4 +126,3 @@
     </div>
 </div>
 {% endblock %}
-

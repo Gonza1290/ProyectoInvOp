@@ -1,5 +1,5 @@
 from django import forms
-from .models import OrdenCompra,ErrorType
+from .models import OrdenCompra,ErrorType,OrdenVenta
 from django.core.validators import MinValueValidator, MaxValueValidator
 #Formulario OrdenCompra
 class OrdenCompraForm(forms.ModelForm):
@@ -14,9 +14,17 @@ class OrdenCompraForm(forms.ModelForm):
             self.fields['articulo'].initial = initial.get('articulo')
             self.fields['proveedor'].initial = initial.get('proveedor')
             
+#Formulario OrdenVenta
+class OrdenVentaForm(forms.ModelForm):
+    class Meta:
+        model = OrdenVenta
+        fields = ['cantidadVendida', 'articulo']  
 
-from django import forms
-from .models import ErrorType  # Asegúrate de importar ErrorType correctamente
+    def __init__(self, *args, **kwargs):
+        super(OrdenVentaForm, self).__init__(*args, **kwargs)
+        if 'initial' in kwargs:
+            initial = kwargs['initial']
+            self.fields['articulo'].initial = initial.get('articulo')
 
 # Formularios tipos de predicción demanda
 class PromedioMovilForm(forms.Form):

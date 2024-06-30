@@ -47,6 +47,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ProyectoInvOp.urls'
 
+# settings.py
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -58,10 +60,12 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'sistemaApp.context_processors.admin_app_list',  # Agregamos nuestro context processor personalizado
             ],
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'ProyectoInvOp.wsgi.application'
 

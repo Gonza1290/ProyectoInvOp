@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor,DemandaHistorica,Accione
+from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor,DemandaHistorica,Accione,OrdenVenta
 from django.db.models import F  # Agregar la importación de F
 from django.db.models import Exists, OuterRef
 from django.urls import reverse
@@ -84,11 +84,15 @@ class DemandaHistoricaAdmin(admin.ModelAdmin):
     ordering = ('id',)
     
 class OrdenCompraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'articulo', 'cantidadLote','estadoOrdenCompra','proveedor')
-    ordering = ('id',)
+    list_display = ('id', 'articulo', 'cantidadLote','montoTotal','estadoOrdenCompra','proveedor')
+    ordering = ('estadoOrdenCompra',)
 
     def has_add_permission(self, request):
         # Devuelve False para deshabilitar la opción de añadir nuevos registros
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        # Devuelve False para deshabilitar la opción de modificar instancias existentes
         return False
     
     def get_list_display(self, request):
@@ -100,11 +104,29 @@ class OrdenCompraAdmin(admin.ModelAdmin):
 
     def Acciones(self, obj):
         acciones_html = ''
-        acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Marcar como recibido</a>&nbsp;&nbsp;'.format(
-            reverse('sistemaApp:marcar_orden_recibida', args=[obj.id])
-        )
+        estado_orden_compra= obj.estadoOrdenCompra
+        if estado_orden_compra.nombreEOC == 'Pendiente':
+            acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Enviar Orden Compra</a>&nbsp;&nbsp;'.format(
+                reverse('sistemaApp:enviar_orden_compra', args=[obj.id])
+            )
+        else:
+            acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Marcar como recibido</a>&nbsp;&nbsp;'.format(
+                reverse('sistemaApp:marcar_orden_recibida', args=[obj.id])
+            )
         return format_html(acciones_html)
 
+class OrdenVentaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'articulo', 'fechaHoraVenta','cantidadVendida','montoTotal')
+    ordering = ('fechaHoraVenta',)
+
+    def has_add_permission(self, request):
+        # Devuelve False para deshabilitar la opción de añadir nuevos registros
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        # Devuelve False para deshabilitar la opción de modificar instancias existentes
+        return False
+    
 class AccionesAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
@@ -115,13 +137,16 @@ class AccionesAdmin(admin.ModelAdmin):
         # Obtener la lista de campos a mostrar
         list_display = super().get_list_display(request)
         # Agregar el botón personalizado a la lista de campos a mostrar
-        list_display = ('nombreArticulo','stockActual','Acciones',)
+        list_display = ('nombreArticulo','stockActual','puntoPedido','Acciones',)
         return list_display
 
     def Acciones(self, obj):
         acciones_html = ''
         acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Crear Orden de Compra</a>&nbsp;&nbsp;'.format(
             reverse('sistemaApp:crear_orden_compra', args=[obj.id])
+        )
+        acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Crear Orden de Venta</a>&nbsp;&nbsp;'.format(
+            reverse('sistemaApp:crear_orden_venta', args=[obj.id])
         )
         acciones_html += '<a class="btn btn-info btn-sm" href="{}">Predecir Demanda</a>&nbsp;&nbsp;'.format(
             reverse('sistemaApp:predecir_demanda_view', args=[obj.id])
@@ -138,6 +163,10 @@ class AccionesAdmin(admin.ModelAdmin):
     def stockActual(self, obj):
         return obj.stockActual
     stockActual.short_description = 'Stock Actual'
+    
+    def puntoPedido(self, obj):
+        return obj.puntoPedido
+    puntoPedido.short_description = 'Punto Pedido'
     
     def has_add_permission(self, request):
         # Devuelve False para deshabilitar la opción de añadir nuevos registros
@@ -161,6 +190,7 @@ admin.site.register(OrdenCompra,OrdenCompraAdmin)
 admin.site.register(Proveedor,ProveedorAdmin)
 admin.site.register(DemandaHistorica,DemandaHistoricaAdmin)
 admin.site.register(Accione,AccionesAdmin)
+admin.site.register(OrdenVenta,OrdenVentaAdmin)
 
 
 

@@ -24,68 +24,23 @@
 
         <!-- Sidebar Menu -->
         <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
-                data-accordion="false">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <li class="nav-item">
                     <a href="/admin/" class="nav-link">
                         <i class="nav-icon fas fa-th-large"></i>
                         <p>Dashboard</p>
                     </a>
                 </li>
-
-                <li class="nav-header">Authentication and Authorization</li>
-                <li class="nav-item">
-                    <a href="/admin/auth/group/" class="nav-link">
-                        <i class="nav-icon fas fa-users"></i> <p>Groups</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/auth/user/" class="nav-link">
-                        <i class="nav-icon fas fa-user"></i> <p>Users</p>
-                    </a>
-                </li>
-
-                <li class="nav-header">Sistemaapp</li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/accione/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Acciones</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/articulo/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Articulos</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/demandahistorica/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Demanda historicas</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/estadoordencompra/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Estado orden compras</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/familiaarticulo/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Familia articulos</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/modeloinventario/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Modelo inventarios</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/ordencompra/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Orden compras</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/sistemaApp/proveedor/" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i> <p>Proveedores</p>
-                    </a>
-                </li>
+                {% for app in admin_app_list %}
+                    <li class="nav-header">{{ app.name }}</li>
+                    {% for model in app.models %}
+                        <li class="nav-item">
+                            <a href="{{ model.url }}" class="nav-link">
+                                <i class="nav-icon fas fa-circle"></i> <p>{{ model.name }}</p>
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% endfor %}
             </ul>
         </nav>
         <!-- /.sidebar-menu -->
@@ -107,6 +62,10 @@
                 <p>Decision: {{ decision }}</p>
             </div>
         </div>
+    </div>
+    <!-- Boton para volver -->
+    <div class="mt-4">
+        <a href="/admin/sistemaApp/accione/" class="btn btn-primary">Volver</a>
     </div>
 </div>
 {% endblock %}

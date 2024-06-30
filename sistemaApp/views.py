@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
 from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica,ErrorType
-from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm,ModeloLoteFijoForm,ModeloIntervaloFijoForm
+from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm,ModeloLoteFijoForm,ModeloIntervaloFijoForm,OrdenVentaForm
 from django import forms
 from datetime import datetime
 
@@ -24,6 +24,7 @@ def crear_orden_compra(request, articulo_id):
             if not ordenes_pend_enviada.exists():
                 orden_compra = form.save(commit=False)
                 orden_compra.estadoOrdenCompra = estado_enviada
+                orden_compra.montoTotal = articulo.precioArticulo * form.cleaned_data['cantidadLote']
                 orden_compra.save()
                 messages.success(request, f'Se ha creado una orden de compra para {articulo.nombreArticulo}.')
                 return redirect('/admin/sistemaApp/accione/')
@@ -44,6 +45,12 @@ def marcar_orden_recibida(request,orden_compra_id):
     articulo.save()
     return redirect('/admin/sistemaApp/ordencompra/')
 
+def enviar_orden_compra(request,orden_compra_id):
+    orden_compra=OrdenCompra.objects.get(pk=orden_compra_id)
+    estado_enviada = get_object_or_404(EstadoOrdenCompra, nombreEOC='Enviada')
+    orden_compra.estadoOrdenCompra =estado_enviada
+    orden_compra.save()
+    return redirect('/admin/sistemaApp/ordencompra/')
 
 #Modulo Demanda
 def predecir_demanda_view(request,articulo_id):
@@ -185,7 +192,7 @@ def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_
 
     return error_calculado, decision,diferencia_real_pronostico
 
-
+#Modulo Inventario
 def cgi_view(request,articulo_id):
     #Obtengo el articulo
     articulo = Articulo.objects.get(pk=articulo_id)
@@ -292,34 +299,44 @@ def cgi_view(request,articulo_id):
         'form': form,
     }
     return render(request, 'cgi_view.html', context)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #Obtengo el articulo
-    articulo = Articulo.objects.get(pk=articulo_id)
-    modelo_inventario = articulo.familiaArticulo.modeloInventario.nombreMI
-    if modelo_inventario == 'Modelo Lote Fijo':
-        demanda_predecida = articulo.demandaPredecida
-        costo_almacentamiento= articulo.costoAlmacenamiento
-        costo_pedido= articulo.proveedor_predefinido.costoPorPedido
-        demora_proveedor= articulo.proveedor_predefinido.demoraPedido
-        lote_optimo= (2*demanda_predecida*(costo_pedido/costo_almacentamiento))**0,5
-        dias_habiles_mesual=30
-        demanda_diaria= demanda_predecida/dias_habiles_mesual
-        punto_pedido= demanda_diaria*demora_proveedor
-        
-        return redirect('/admin/sistemaApp/accione/')
-    elif modelo_inventario == 'Modelo Intervalo Fijo':
-        return redirect('/admin/sistemaApp/accione/')
+
+#Modulo Ventas
+def crear_orden_venta(request,articulo_id):
+    articulo_inicial = get_object_or_404(Articulo, pk=articulo_id)
+
+    if request.method == 'POST':
+        form = OrdenVentaForm(request.POST)
+        if form.is_valid():
+            articulo = form.cleaned_data['articulo']
+            cantidad_vendida = form.cleaned_data['cantidadVendida']
+            #Si no tengo stock
+            if articulo.stockActual < cantidad_vendida:
+                messages.error(request,f'Stock insuficiente de {articulo.nombreArticulo}, stock actual: {articulo.stockActual}')
+            else:
+                precio_articulo = articulo.precioArticulo
+                monto_total = precio_articulo * cantidad_vendida
+                fecha_hora_venta= datetime.now()
+                orden_venta = form.save(commit=False)
+                orden_venta.montoTotal = monto_total
+                orden_venta.fechaHoraVenta = fecha_hora_venta
+                orden_venta.save()
+                articulo.stockActual -= cantidad_vendida
+                articulo.save()
+                messages.success(request,f'Se ha generado la orden de venta para {articulo.nombreArticulo}')
+                #Generar Orden compra automatica si stock actual alcanzo el punto pedido
+                if articulo.stockActual <= articulo.puntoPedido:
+                    estado_pendiente = get_object_or_404(EstadoOrdenCompra, nombreEOC='Pendiente')
+                    orden_compra = OrdenCompra.objects.create(
+                        cantidadLote=articulo.loteOptimo, 
+                        montoTotal= articulo.precioArticulo * articulo.loteOptimo,
+                        estadoOrdenCompra=estado_pendiente,
+                        articulo= articulo,
+                        proveedor=  articulo.proveedor_predefinido,
+                    )
+                    orden_compra.save()
+                    messages.success(request,f'Se ha generado la orden de compra para {articulo.nombreArticulo}')
+                return redirect('/admin/sistemaApp/accione/')
     else:
-        return redirect('/admin/sistemaApp/accione/')
+        
+        form = OrdenVentaForm(initial={'articulo': articulo_inicial})
+    return render(request, 'crear_orden_venta.html', {'form': form})
