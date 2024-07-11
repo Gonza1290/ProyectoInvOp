@@ -1,6 +1,6 @@
 
 distlib==0.3.7
-Django==5.0.4
+Django==5.0.7
 django-import-export==3.3.8
 et-xmlfile==1.1.0
 pillow==10.3.0
