@@ -5,6 +5,13 @@ from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica,Er
 from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm,ModeloLoteFijoForm,ModeloIntervaloFijoForm,OrdenVentaForm
 from django import forms
 from datetime import datetime
+from django.shortcuts import redirect
+from django.contrib.admin.views.decorators import staff_member_required
+
+
+
+def index(request):
+    return redirect('/admin/')
 
 #Modulo Orden Compra
 def crear_orden_compra(request, articulo_id):
@@ -35,20 +42,39 @@ def crear_orden_compra(request, articulo_id):
     
     return render(request, 'crear_orden_compra.html', {'form': form})
 
-def marcar_orden_recibida(request,orden_compra_id):
-    orden_compra=OrdenCompra.objects.get(pk=orden_compra_id)
-    estado_recibida = get_object_or_404(EstadoOrdenCompra, nombreEOC='Recibido')
-    orden_compra.estadoOrdenCompra =estado_recibida
+from django.contrib import messages
+
+def marcar_orden_recibida(request, orden_compra_id):
+    try:
+        orden_compra = OrdenCompra.objects.get(pk=orden_compra_id)
+        estado_recibida = EstadoOrdenCompra.objects.get(nombreEOC='Recibido')
+    except OrdenCompra.DoesNotExist:
+        messages.error(request, "Orden de compra no encontrada")
+        return redirect('/admin/sistemaApp/ordencompra/')
+    except EstadoOrdenCompra.DoesNotExist:
+        messages.error(request, "Estado 'Recibido' no encontrado")
+        return redirect('/admin/sistemaApp/ordencompra/')
+
+    orden_compra.estadoOrdenCompra = estado_recibida
     orden_compra.save()
+
     articulo = Articulo.objects.get(pk=orden_compra.articulo.id)
     articulo.stockActual += orden_compra.cantidadLote
     articulo.save()
+
     return redirect('/admin/sistemaApp/ordencompra/')
 
 def enviar_orden_compra(request,orden_compra_id):
     orden_compra=OrdenCompra.objects.get(pk=orden_compra_id)
-    estado_enviada = get_object_or_404(EstadoOrdenCompra, nombreEOC='Enviada')
-    orden_compra.estadoOrdenCompra =estado_enviada
+    estado = get_object_or_404(EstadoOrdenCompra, nombreEOC='Enviada')
+    orden_compra.estadoOrdenCompra =estado
+    orden_compra.save()
+    return redirect('/admin/sistemaApp/ordencompra/')
+
+def cancelar_orden_compra(request,orden_compra_id):
+    orden_compra=OrdenCompra.objects.get(pk=orden_compra_id)
+    estado = get_object_or_404(EstadoOrdenCompra, nombreEOC='Cancelada')
+    orden_compra.estadoOrdenCompra =estado
     orden_compra.save()
     return redirect('/admin/sistemaApp/ordencompra/')
 
@@ -197,7 +223,7 @@ def cgi_view(request,articulo_id):
     #Obtengo el articulo
     articulo = Articulo.objects.get(pk=articulo_id)
     # Obtener el modelo predefinido para el articulo
-    modelo_inventario_seleccionado = articulo.familiaArticulo.modeloInventario.nombreMI
+    modelo_inventario_seleccionado = articulo.category.modeloInventario.nombreMI
     
     if modelo_inventario_seleccionado == 'Modelo Lote Fijo':
         form = ModeloLoteFijoForm()
@@ -340,3 +366,8 @@ def crear_orden_venta(request,articulo_id):
         
         form = OrdenVentaForm(initial={'articulo': articulo_inicial})
     return render(request, 'crear_orden_venta.html', {'form': form})
+
+# Modulo Ayuda
+@staff_member_required
+def help(request):
+    return render(request, 'help.html')

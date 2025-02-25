@@ -1,38 +1,82 @@
-from django.contrib import admin
-from .models import Articulo,FamiliaArticulo,ModeloInventario,EstadoOrdenCompra,OrdenCompra,Proveedor,DemandaHistorica,Accione,OrdenVenta
-from django.db.models import F  # Agregar la importación de F
-from django.db.models import Exists, OuterRef
+from django.contrib import admin, messages
+from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import F, Exists, OuterRef
 from django.urls import reverse
 from django.utils.html import format_html
 from django.shortcuts import redirect
+from django.db import transaction
+from sistemaApp.models import (
+    Articulo,
+    Category,
+    SubCategory,
+    Marca,
+    UnidadMedida,
+    EstadoOrdenCompra,
+    OrdenCompra,
+    Proveedor,
+    DemandaHistorica,
+    Accione,
+    OrdenVenta,
+    ModeloInventario
+)
 
+from django.contrib import messages
+from django.db import transaction
 
-class FamiliaArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombre_familia', 'modeloInventario', 'fechaHoraBajaFA')
-    search_fields = ('id','nombreFamiliaArticulo')
-    ordering = ('id',)
-    list_display_links = ('nombre_familia',)
+# Clase que permite agregar acciones personalizadas a los modelos de Django
+class LogicalDeletionMixin:
+    @transaction.atomic
+    def Eliminacion_Logica(self, request, queryset):
+        try:
+            for obj in queryset:
+                obj.dar_de_baja()
+            self.message_user(request, "Eliminación lógica realizada con éxito.", messages.SUCCESS)
+        except Exception as e:
+            self.message_user(request, f"Error al realizar la eliminación lógica: {e}", messages.ERROR)
+    Eliminacion_Logica.short_description = "Eliminación Lógica"
+
+    @transaction.atomic
+    def Activacion_Logica(self, request, queryset):
+        try:
+            for obj in queryset:
+                obj.dar_de_alta()
+            self.message_user(request, "Activación lógica realizada con éxito.", messages.SUCCESS)
+        except Exception as e:
+            self.message_user(request, f"Error al realizar la activación lógica: {e}", messages.ERROR)
+    Activacion_Logica.short_description = "Activación Lógica"
+
+class CategoryAdmin(admin.ModelAdmin, LogicalDeletionMixin):
+    list_display = ('id', 'nombreCategory', 'modeloInventario', 'fechaHoraBaja')
+    search_fields = ('id','nombreCategory')
+    ordering = ('nombreCategory',)
+    list_display_links = ('nombreCategory',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
+
+class SubCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombreSubCategory', 'get_categories','fechaHoraBaja')
+    search_fields = ('id','nombreSubCategory')  
+    ordering = ('nombreSubCategory',)
+    list_display_links = ('nombreSubCategory',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
+
+class MarcaAdmin (admin.ModelAdmin):
+    list_display = ('id', 'nombreMarca')
+    search_fields = ('id','nombreMarca')
+    ordering = ('nombreMarca',)
+    list_display_links = ('nombreMarca',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
     
-    
-    #Metodo para mostrar otro nombre distinto del atributo
-    def nombre_familia(self, obj):
-        return obj.nombreFamiliaArticulo
-    nombre_familia.short_description = 'Nombre de la Familia'
-    
-    # Action para dar de baja logica a FA
-    def Eliminacion_Logica(modeladmin, request, queryset):
-        for articulo in queryset:
-            articulo.dar_de_baja()
-    Eliminacion_Logica.short_description = "Eliminacion Logica"
-    
-    # Action para dar de baja logica a FA
-    def Activacion_Logica(modeladmin, request, queryset):
-        for articulo in queryset:
-            articulo.dar_de_alta()
-    Activacion_Logica.short_description = "Activacion Logica"
-    
-    #Agrego accion
-    actions = [Eliminacion_Logica,Activacion_Logica]
+class UnidadMedidaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombreUnidadMedida')
+    search_fields = ('id','nombreUnidadMedida')
+    ordering = ('nombreUnidadMedida',)
+    list_display_links = ('nombreUnidadMedida',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
     
 #Clase que define un filtro personalizado en articulos
 class ArticuloFaltanteFilter(admin.SimpleListFilter):
@@ -42,7 +86,7 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         # Define las opciones del filtro
         return (
-            ('faltantes', 'Artículos faltantes'),  # Opción para artículos con stockActual < stockSeguridad
+            ('faltantes', 'Artículos Faltantes'),  # Opción para artículos con stockActual < stockSeguridad
             ('reponer', 'Articulos a Reponer'),  # Opción para artículos con stockActual < puntoPedido
         )
 
@@ -63,30 +107,40 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
             )
         
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','costoAlmacenamiento','loteOptimo','tiempoEntrePedidos','numeroPedidos','demandaPredecida','familiaArticulo','proveedor_predefinido')
+    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','loteOptimo','category','proveedor_predefinido','marca','fechaHoraBaja')
     search_fields = ('id','nombreArticulo')
     ordering = ('id',)
     list_display_links = ('nombreArticulo',)
     list_filter = (ArticuloFaltanteFilter,)  # Agregar el filtro por stockActual
+    exclude = ('fechaHoraBaja','tiempoEntrePedidos','numeroPedidos','demandaPredecida',)  # Excluir el campo fechaHoraBaja del formulario
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
 
 class EstadoOrdenCompraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreEOC', 'fechaHoraBajaEOC')
+    list_display = ('id', 'nombreEOC', 'fechaHoraBaja')
     ordering = ('id',)
     list_display_links = ('nombreEOC',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
     
 class ProveedorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreProveedor', 'fechaHoraBajaP','demoraPedido','costoPorPedido')
+    list_display = ('id', 'nombreProveedor', 'fechaHoraBaja','demoraPedido','costoPorPedido')
     ordering = ('id',)
     list_display_links = ('nombreProveedor',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
          
 class DemandaHistoricaAdmin(admin.ModelAdmin):
     list_display = ('id', 'mes', 'año','cantidadDemanda','articulo')
     ordering = ('id',)
     
 class OrdenCompraAdmin(admin.ModelAdmin):
-    list_display = ('id', 'articulo', 'cantidadLote','montoTotal','estadoOrdenCompra','proveedor')
-    ordering = ('estadoOrdenCompra',)
+    list_display = ('id', 'articulo', 'fechaHoraCompra','cantidadLote','montoTotal','estadoOrdenCompra','proveedor')
+    ordering = ('estadoOrdenCompra__nombreEOC',)
 
+    def estadoOrdenCompra(self):
+        return self.nombreCategory
+    estadoOrdenCompra.short_description = 'Estado Orden Compra'
+    
     def has_add_permission(self, request):
         # Devuelve False para deshabilitar la opción de añadir nuevos registros
         return False
@@ -103,16 +157,30 @@ class OrdenCompraAdmin(admin.ModelAdmin):
         return list_display
 
     def Acciones(self, obj):
-        acciones_html = ''
-        estado_orden_compra= obj.estadoOrdenCompra
-        if estado_orden_compra.nombreEOC == 'Pendiente':
-            acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Enviar Orden Compra</a>&nbsp;&nbsp;'.format(
-                reverse('sistemaApp:enviar_orden_compra', args=[obj.id])
+        estado_orden_compra = obj.estadoOrdenCompra.nombreEOC
+        acciones = {
+            'Pendiente': (
+                '<a class="btn btn-primary btn-sm" href="{}">Enviar Orden Compra</a>&nbsp;&nbsp;'.format(
+                    reverse('sistemaApp:enviar_orden_compra', args=[obj.id])
+                ) +
+                '<a class="btn btn-danger btn-sm" href="{}">Cancelar Orden Compra</a>&nbsp;&nbsp;'.format(
+                    reverse('sistemaApp:cancelar_orden_compra', args=[obj.id])
+                )
+            ),
+            'Enviada': (
+                '<a class="btn btn-primary btn-sm" href="{}">Marcar como recibido</a>&nbsp;&nbsp;'.format(
+                    reverse('sistemaApp:marcar_orden_recibida', args=[obj.id])
+                )
+            ),
+            'Recibido': (
+                '<span class="btn btn-secondary btn-sm disabled">Recibido</span>&nbsp;&nbsp;'
+            ),
+            'Cancelada': (
+                '<span class="btn btn-secondary btn-sm disabled">Cancelada</span>&nbsp;&nbsp;'
             )
-        else:
-            acciones_html += '<a class="btn btn-primary btn-sm" href="{}">Marcar como recibido</a>&nbsp;&nbsp;'.format(
-                reverse('sistemaApp:marcar_orden_recibida', args=[obj.id])
-            )
+        }
+
+        acciones_html = acciones.get(estado_orden_compra, '')
         return format_html(acciones_html)
 
 class OrdenVentaAdmin(admin.ModelAdmin):
@@ -128,6 +196,7 @@ class OrdenVentaAdmin(admin.ModelAdmin):
         return False
     
 class AccionesAdmin(admin.ModelAdmin):
+    list_display_links = None
 
     def get_queryset(self, request):
         # Obtener el queryset estándar de todos los objetos de Articulo
@@ -156,18 +225,6 @@ class AccionesAdmin(admin.ModelAdmin):
         )
         return format_html(acciones_html)
     
-    def nombreArticulo(self, obj):
-        return obj.nombreArticulos
-    nombreArticulo.short_description = 'Nombre Articulo'
-    
-    def stockActual(self, obj):
-        return obj.stockActual
-    stockActual.short_description = 'Stock Actual'
-    
-    def puntoPedido(self, obj):
-        return obj.puntoPedido
-    puntoPedido.short_description = 'Punto Pedido'
-    
     def has_add_permission(self, request):
         # Devuelve False para deshabilitar la opción de añadir nuevos registros
         return False
@@ -180,9 +237,10 @@ class AccionesAdmin(admin.ModelAdmin):
         # Devuelve False para deshabilitar la opción de modificar instancias existentes
         return False
 
-    
-admin.site.register(FamiliaArticulo,FamiliaArticuloAdmin)
-#@admin.register(FamiliaArticulo)
+admin.site.register(Category,CategoryAdmin)
+admin.site.register(SubCategory,SubCategoryAdmin)
+admin.site.register(Marca,MarcaAdmin)
+admin.site.register(UnidadMedida,UnidadMedidaAdmin)
 admin.site.register(Articulo,ArticuloAdmin)
 admin.site.register(ModeloInventario)
 admin.site.register(EstadoOrdenCompra,EstadoOrdenCompraAdmin)
@@ -191,6 +249,7 @@ admin.site.register(Proveedor,ProveedorAdmin)
 admin.site.register(DemandaHistorica,DemandaHistoricaAdmin)
 admin.site.register(Accione,AccionesAdmin)
 admin.site.register(OrdenVenta,OrdenVentaAdmin)
+
 
 
 
