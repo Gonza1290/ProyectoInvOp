@@ -251,8 +251,3 @@ admin.site.register(Accione,AccionesAdmin)
 admin.site.register(OrdenVenta,OrdenVentaAdmin)
 
 
-
-
-
-
-
