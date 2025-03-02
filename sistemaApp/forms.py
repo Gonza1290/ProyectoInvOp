@@ -1,6 +1,8 @@
 from django import forms
 from .models import OrdenCompra,ErrorType,OrdenVenta
 from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import datetime
+
 #Formulario OrdenCompra
 class OrdenCompraForm(forms.ModelForm):
     class Meta:
@@ -28,18 +30,51 @@ class OrdenVentaForm(forms.ModelForm):
 
 # Formularios tipos de predicción demanda
 class PromedioMovilForm(forms.Form):
-    periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados')
+    periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados (Meses)')
+    MESES_CHOICES = [
+        (1, 'Enero'),
+        (2, 'Febrero'),
+        (3, 'Marzo'),
+        (4, 'Abril'),
+        (5, 'Mayo'),
+        (6, 'Junio'),
+        (7, 'Julio'),
+        (8, 'Agosto'),
+        (9, 'Septiembre'),
+        (10, 'Octubre'),
+        (11, 'Noviembre'),
+        (12, 'Diciembre'),
+    ]
+    mesApredecir = forms.ChoiceField(
+        label='Mes a predecir',
+        choices=MESES_CHOICES,
+        help_text='Solo el proximo mes o meses anteriores'
+    )
     metodoError = forms.ChoiceField(
         label='Método de error a usar',
         choices=ErrorType.choices,
-        initial=ErrorType.MAD  # initial en lugar de default
+        initial=ErrorType.MAD, # initial en lugar de default
+        help_text='Solo disponible si se tiene demanda real'
     )
     errorAceptable = forms.IntegerField(
         label='Error Aceptable (%)',
         validators=[MinValueValidator(1), MaxValueValidator(100)],
         help_text='Ingrese un valor entre 1 y 100'
     )
-
+    
+    def __init__(self, *args, **kwargs):
+        super(PromedioMovilForm, self).__init__(*args, **kwargs)
+        mes_actual = datetime.now().month
+        self.fields['mesApredecir'].choices = [
+            (mes, nombre) for mes, nombre in self.MESES_CHOICES if mes <= mes_actual + 1
+        ]
+        
+    def clean_periodosConsiderados(self):
+        periodos = self.cleaned_data.get('periodosConsiderados')
+        if periodos <= 0:
+            raise forms.ValidationError("El número de periodos debe ser mayor que cero.")
+        return periodos
+    
 class PromedioMovilPonderadoForm(forms.Form):
     periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados')
     metodoError = forms.ChoiceField(

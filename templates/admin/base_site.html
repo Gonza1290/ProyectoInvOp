@@ -1,9 +1,56 @@
 {% extends "admin/base.html" %}
+{% load static %}
 
 {% block sidebar %}
-    {{block.super}}
-    <div>
-        <h1>Statistics</h1>
-        <a href="/admin/station/stats/">Published Stations</a>
+<aside class="main-sidebar elevation-4 sidebar-dark-primary">
+    <!-- Brand Logo -->
+    <a href="/admin/" class="brand-link">
+        <img src="{% static 'vendor/adminlte/img/AdminLTELogo.png' %}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">Panel administración</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel (optional) -->
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <i class="fas fa-inverse user-profile fa-user-circle"></i>
+            </div>
+            <div class="info">
+                <a href="/admin/auth/user/1/change/" class="d-block">{{ user.get_username }}</a>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <li class="nav-item">
+                    <a href="/admin/" class="nav-link">
+                        <i class="nav-icon fas fa-th-large"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+                {% for app in admin_app_list %}
+                    <li class="nav-header">{{ app.name }}</li>
+                    {% for model in app.models %}
+                        <li class="nav-item">
+                            <a href="{{ model.url }}" class="nav-link">
+                                {% if model.name == "Groups" %}
+                                    <i class="nav-icon fas fa-users"></i>
+                                {% elif model.name == "Users" %}
+                                    <i class="nav-icon fas fa-user"></i>
+                                {% else %}
+                                    <i class="nav-icon fas fa-circle"></i>
+                                {% endif %}
+                                <p>{{ model.name }}</p>
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </nav>
+        <!-- /.sidebar-menu -->
     </div>
+    <!-- /.sidebar -->
+</aside>
 {% endblock %}

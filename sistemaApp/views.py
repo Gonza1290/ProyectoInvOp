@@ -7,8 +7,7 @@ from django import forms
 from datetime import datetime
 from django.shortcuts import redirect
 from django.contrib.admin.views.decorators import staff_member_required
-
-
+import calendar
 
 def index(request):
     return redirect('/admin/')
@@ -84,46 +83,77 @@ def predecir_demanda_view(request,articulo_id):
     formulario_seleccionado = request.session.get('formulario_seleccionado', 'PromedioMovil')
     form = PromedioMovilForm()
 
+    # Definir el formulario a mostrar
     if 'Boton1' in request.POST:
         formulario_seleccionado = 'PromedioMovil'
-        form = PromedioMovilForm(request.POST)
+        form = PromedioMovilForm()
          # Guardar en la sesión
         request.session['formulario_seleccionado'] = formulario_seleccionado
 
     elif 'Boton2' in request.POST:
         formulario_seleccionado = 'PromedioMovilPonderado'
-        form = PromedioMovilPonderadoForm(request.POST)
+        form = PromedioMovilPonderadoForm()
          # Guardar en la sesión
         request.session['formulario_seleccionado'] = formulario_seleccionado
 
     elif 'Boton3' in request.POST:
         formulario_seleccionado = 'SuavizacionExponencial'
-        form = SuavizacionExponencialForm(request.POST)
+        form = SuavizacionExponencialForm()
          # Guardar en la sesión
         request.session['formulario_seleccionado'] = formulario_seleccionado
 
-
-     # Si es un POST
+    # Si es un POST en el formulario seleccionado
     if request.method == 'POST':
         if formulario_seleccionado == 'PromedioMovil':
             form = PromedioMovilForm(request.POST)
             if form.is_valid():
                 periodos = form.cleaned_data['periodosConsiderados']
-                mes_actual = datetime.now().month
-                rango_meses = range(mes_actual - periodos + 1, mes_actual + 1)
-                demanda_historicas = DemandaHistorica.objects.filter(mes__in=rango_meses, articulo=articulo_id)
+                mesApredicir = int(form.cleaned_data['mesApredecir'])
+                anio_actual = datetime.now().year
+                
+                # Calcular el rango de meses considerando los años
+                rango_meses = []
+                for i in range(periodos):
+                    mes = mesApredicir - i - 1
+                    anio = anio_actual
+                    if mes <= 0:
+                        mes += 12
+                        anio -= 1
+                    rango_meses.append((mes, anio))
+
+                print(rango_meses)
+
+                # Filtrar las demandas históricas considerando los meses y años
+                demanda_historicas = DemandaHistorica.objects.filter(
+                    Q(articulo=articulo_id) & 
+                    Q(mes__in=[mes for mes, anio in rango_meses]) & 
+                    Q(año__in=[anio for mes, anio in rango_meses])
+                )
 
                 if demanda_historicas.count() != periodos:
                     messages.error(request, "Cantidad de Demandas Historicas insuficientes")
                 else:
                     demanda_predecida = sum(demanda_historica.cantidadDemanda for demanda_historica in demanda_historicas) / periodos
                     metodo_error = form.cleaned_data['metodoError']
-                    demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
-                    error_aceptable = form.cleaned_data['errorAceptable']
-
-                    error_calculado, decision,diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error,articulo_id)
-
+                    try:
+                        demanda_real_proxima = DemandaHistorica.objects.get(mes=mesApredicir, articulo=articulo_id).cantidadDemanda
+                    except DemandaHistorica.DoesNotExist:
+                        demanda_real_proxima = None
+                    #Si existe una demanda real proxima se calcula el error
+                    if demanda_real_proxima is not None:  
+                        error_aceptable = form.cleaned_data['errorAceptable']
+                        error_calculado, decision, diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error,articulo_id)
+                    else:
+                        demanda_real_proxima = 'No disponible para calcular error'
+                        error_calculado = 'No disponible'
+                        error_aceptable = 'No disponible'
+                        decision = 'No disponible'
+                        diferencia_real_pronostico = 'No disponible'
+                    
+                    nombre_mes = obtener_nombre_mes(mesApredicir)
+                    
                     resultados = {
+                        'mes_a_predecir': nombre_mes,
                         'demanda_predecida': demanda_predecida,
                         'error_calculado': error_calculado,
                         'error_aceptable': error_aceptable,
@@ -223,7 +253,7 @@ def cgi_view(request,articulo_id):
     #Obtengo el articulo
     articulo = Articulo.objects.get(pk=articulo_id)
     # Obtener el modelo predefinido para el articulo
-    modelo_inventario_seleccionado = articulo.category.modeloInventario.nombreMI
+    modelo_inventario_seleccionado = articulo.categoria.modeloInventario.nombreMI
     
     if modelo_inventario_seleccionado == 'Modelo Lote Fijo':
         form = ModeloLoteFijoForm()
@@ -371,3 +401,7 @@ def crear_orden_venta(request,articulo_id):
 @staff_member_required
 def help(request):
     return render(request, 'help.html')
+
+#Funciones Auxiliares
+def obtener_nombre_mes(numero_mes):
+    return calendar.month_name[numero_mes]

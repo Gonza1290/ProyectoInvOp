@@ -1,6 +1,48 @@
 {% extends "admin/base_site.html" %}
-
 {% load static %}
+
+<!-- Head -->
+{% block extrahead %}
+    {{ block.super }}
+    <!-- Carga MathJax para renderizar fórmulas matemáticas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+    <style>
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        .content-wrapper {
+            margin: 0;
+            padding: 0;
+        }
+        .card {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+{% endblock %}
 
 {% block title %}Help | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
@@ -10,61 +52,425 @@
     </h1>
 {% endblock %}
 
-{% block sidebar %}
-<aside class="main-sidebar elevation-4 sidebar-dark-primary">
-    <!-- Brand Logo -->
-    <a href="/admin/" class="brand-link">
-        <img src="{% static 'vendor/adminlte/img/AdminLTELogo.png' %}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-            style="opacity: .8">
-        <span class="brand-text font-weight-light">Django administration</span>
-    </a>
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <!-- Sidebar user panel (optional) -->
-        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-            <div class="image">
-                <i class="fas fa-inverse user-profile fa-user-circle"></i>
-            </div>
-            <div class="info">
-                <a href="/admin/auth/user/1/change/" class="d-block">admin</a>
-            </div>
-        </div>
-
-    <!-- Sidebar Menu -->
-    <nav class="mt-2">
-        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-            <li class="nav-item">
-                <a href="/admin/" class="nav-link">
-                    <i class="nav-icon fas fa-th-large"></i>
-                    <p>Dashboard</p>
-                </a>
-            </li>
-            {% for app in admin_app_list %}
-                <li class="nav-header">{{ app.name }}</li>
-                {% for model in app.models %}
-                    <li class="nav-item">
-                        <a href="{{ model.url }}" class="nav-link">
-                            <i class="nav-icon fas fa-circle"></i> <p>{{ model.name }}</p>
-                        </a>
-                    </li>
-                {% endfor %}
-            {% endfor %}
-        </ul>
-    </nav>
-    <!-- /.sidebar-menu -->
-</div>
-<!-- /.sidebar -->
-</aside>
-{% endblock %}
-
 {% block content %}
     <div class="content-wrapper">
         <div class="card">
             <div class="card-body">
-                <h1>Help</h1>
-                <!-- Add your help content here -->
+                <!-- Pestañas -->
+                <div class="tab">
+                    <button class="tablinks" onclick="openModel(event, 'EOQ')" id="defaultOpen">Modelo EOQ</button>
+                    <button class="tablinks" onclick="openModel(event, 'POQ')">Modelo POQ</button>
+                    <button class="tablinks" onclick="openModel(event, 'Promedio Movil')">Promedio Movil</button>
+                    <button class="tablinks" onclick="openModel(event, 'Promedio Movil Ponderado')">Promedio Movil Ponderado</button>
+                </div>
+
+                <!-- Contenido de las pestañas -->
+                <div id="EOQ" class="tabcontent">    
+                    <h1>Modelo de Lote Fijo (EOQ)</h1>
+                    <p>
+                        El <strong>Modelo de Lote Fijo</strong>, también conocido como <strong>Modelo de Cantidad Económica de Pedido (EOQ)</strong>, es una herramienta utilizada en la gestión de inventarios para determinar la cantidad óptima de pedido que minimiza los costos totales asociados con la compra, el almacenamiento y la gestión de inventario. Cuando el inventario alcanza un nivel mínimo, se realiza un pedido para reabastecerlo, manteniendo así un equilibrio entre los costos de pedido y los costos de almacenamiento.
+                    </p>
+
+                    <h2>Supuestos del Modelo</h2>
+                    <ul>
+                        <li>Demanda constante y conocida.</li>
+                        <li>Tiempo de entrega constante.</li>
+                        <li>Costo de pedido fijo.</li>
+                        <li>Costo de almacenamiento proporcional al inventario.</li>
+                        <li>No se permiten faltantes.</li>
+                        <li>Reabastecimiento instantáneo.</li>
+                    </ul>
+
+                    <h2>Fórmula del Modelo EOQ</h2>
+                    <p>
+                        La cantidad óptima de pedido (\(Q\)) se calcula mediante la siguiente fórmula:
+                    </p>
+                    <p style="text-align: center;">
+                        \[
+                        Q = \sqrt{\frac{2DS}{H}}
+                        \]
+                    </p>
+                    <p>
+                        Donde:
+                    </p>
+                    <ul>
+                        <li>\(Q\): Cantidad óptima de pedido (unidades).</li>
+                        <li>\(D\): Demanda anual del producto (unidades/año).</li>
+                        <li>\(S\): Costo de realizar un pedido (por pedido).</li>
+                        <li>\(H\): Costo de almacenamiento por unidad por año.</li>
+                    </ul>
+
+                    <h2>Ejemplo</h2>
+                    <p>
+                        Supongamos que:
+                    </p>
+                    <ul>
+                        <li>La demanda anual (\(D\)) es de 1,000 unidades.</li>
+                        <li>El costo de realizar un pedido (\(S\)) es de $50 por pedido.</li>
+                        <li>El costo de almacenamiento (\(H\)) es de $2 por unidad por año.</li>
+                    </ul>
+                    <p>
+                        Aplicando la fórmula EOQ:
+                    </p>
+                    <p style="text-align: center;">
+                        \[
+                        Q = \sqrt{\frac{2 \cdot 1000 \cdot 50}{2}} = \sqrt{50,000} \approx 224 \text{ unidades}
+                        \]
+                    </p>
+                    <p>
+                        Esto significa que la cantidad óptima de pedido es de <strong>224 unidades</strong> para minimizar los costos totales.
+                    </p>
+
+                    <h2>Ventajas del Modelo EOQ</h2>
+                    <ul>
+                        <li>Minimiza los costos totales de inventario.</li>
+                        <li>Es simple y fácil de aplicar en situaciones con demanda constante.</li>
+                        <li>Optimiza la planificación de compras y almacenamiento.</li>
+                    </ul>
+
+                    <h2>Limitaciones del Modelo EOQ</h2>
+                    <ul>
+                        <li>No es adecuado para productos con demanda variable o estacional.</li>
+                        <li>No considera descuentos por volumen o fluctuaciones en los costos.</li>
+                        <li>Supone un reabastecimiento instantáneo, lo que no siempre es realista.</li>
+                    </ul>
+
+                    <h2>Conclusión</h2>
+                    <p>
+                        El Modelo de Lote Fijo es una herramienta útil para gestionar inventarios en situaciones donde la demanda es estable y predecible. Sin embargo, es importante considerar sus limitaciones y adaptarlo a las condiciones reales del negocio.
+                    </p>
+                </div>
+                <!-- Contenido de las pestañas -->
+                <div id="POQ" class="tabcontent"> 
+                    <h1>Modelo de Intervalo Fijo (POQ)</h1>
+                    <p>
+                        El <strong>Modelo de Intervalo Fijo</strong> (también conocido como <strong>Modelo de Periodo Fijo</strong>) es un enfoque de gestión de inventarios en el que los pedidos se realizan en intervalos de tiempo fijos, en lugar de hacerlo cuando el inventario alcanza un nivel mínimo. Este modelo es útil en situaciones donde la demanda es variable y es conveniente realizar pedidos en momentos específicos.
+                    </p>
+                
+                    <h2>Características del Modelo</h2>
+                    <ul>
+                        <li><strong>Pedidos Periódicos</strong>: Los pedidos se realizan en intervalos de tiempo predefinidos (por ejemplo, cada semana o cada mes).</li>
+                        <li><strong>Cantidad Variable</strong>: La cantidad pedida en cada intervalo puede variar, dependiendo del nivel de inventario actual y la demanda esperada.</li>
+                        <li><strong>Revisión Continua</strong>: En cada intervalo, se revisa el nivel de inventario y se realiza un pedido para llevar el stock a un nivel máximo deseado.</li>
+                        <li><strong>Demanda Incierta</strong>: Adecuado para situaciones donde la demanda no es constante o predecible.</li>
+                    </ul>
+                
+                    <h2>Fórmula del Modelo POQ</h2>
+                    <p>
+                        La cantidad a pedir (\(Q\)) en cada intervalo se calcula como:
+                    </p>
+                    <p style="text-align: center;">
+                        \[
+                        Q = S - I
+                        \]
+                    </p>
+                    <p>
+                        Donde:
+                    </p>
+                    <ul>
+                        <li>\(Q\): Cantidad a pedir.</li>
+                        <li>\(S\): Nivel máximo de inventario deseado.</li>
+                        <li>\(I\): Inventario actual en el momento de la revisión.</li>
+                    </ul>
+                    <p>
+                        El nivel máximo de inventario (\(S\)) se calcula como:
+                    </p>
+                    <p style="text-align: center;">
+                        \[
+                        S = D \cdot (T + L) + Z \cdot \sigma \cdot \sqrt{T + L}
+                        \]
+                    </p>
+                    <p>
+                        Donde:
+                    </p>
+                    <ul>
+                        <li>\(D\): Demanda promedio por período.</li>
+                        <li>\(T\): Intervalo de tiempo entre revisiones.</li>
+                        <li>\(L\): Tiempo de entrega (lead time).</li>
+                        <li>\(Z\): Factor de seguridad (depende del nivel de servicio deseado).</li>
+                        <li>\(\sigma\): Desviación estándar de la demanda.</li>
+                    </ul>
+                
+                    <h2>Ejemplo</h2>
+                    <p>
+                        Supongamos que:
+                    </p>
+                    <ul>
+                        <li>La demanda promedio (\(D\)) es de 100 unidades por semana.</li>
+                        <li>El intervalo de revisión (\(T\)) es de 2 semanas.</li>
+                        <li>El tiempo de entrega (\(L\)) es de 1 semana.</li>
+                        <li>El nivel de servicio deseado es del 95%, lo que corresponde a un factor de seguridad (\(Z\)) de 1.65.</li>
+                        <li>La desviación estándar de la demanda (\(\sigma\)) es de 20 unidades.</li>
+                        <li>El inventario actual (\(I\)) es de 50 unidades.</li>
+                    </ul>
+                    <p>
+                        <strong>Paso 1</strong>: Calcular el nivel máximo de inventario (\(S\)):
+                    </p>
+                    <p style="text-align: center;">
+                        \[
+                        S = 100 \cdot (2 + 1) + 1.65 \cdot 20 \cdot \sqrt{2 + 1}
+                        \]
+                        \[
+                        S = 300 + 57.08 \approx 357 \text{ unidades}
+                        \]
+                    </p>
+                    <p>
+                        <strong>Paso 2</strong>: Calcular la cantidad a pedir (\(Q\)):
+                    </p>
+                    <p style="text-align: center;">
+                        \[
+                        Q = 357 - 50 = 307 \text{ unidades}
+                        \]
+                    </p>
+                    <p>
+                        En este caso, se deben pedir <strong>307 unidades</strong> para llevar el inventario al nivel máximo deseado.
+                    </p>
+                
+                    <h2>Ventajas del Modelo POQ</h2>
+                    <ul>
+                        <li><strong>Simplicidad</strong>: Fácil de implementar con intervalos regulares.</li>
+                        <li><strong>Control Periódico</strong>: Permite una revisión constante del inventario.</li>
+                        <li><strong>Coordinación con Proveedores</strong>: Facilita la planificación de entregas periódicas.</li>
+                    </ul>
+                
+                    <h2>Limitaciones del Modelo POQ</h2>
+                    <ul>
+                        <li><strong>Mayor Inventario de Seguridad</strong>: Requiere un mayor stock de seguridad debido a la variabilidad de la demanda.</li>
+                        <li><strong>Riesgo de Agotamiento</strong>: Posibilidad de faltantes si la demanda es muy alta durante el intervalo.</li>
+                        <li><strong>No Optimiza Costos</strong>: No minimiza los costos de pedido y almacenamiento tan eficientemente como el Modelo EOQ.</li>
+                    </ul>
+                </div>   
+                <!-- Contenido de las pestañas -->
+                <div id="Promedio Movil" class="tabcontent">
+                    <h2>Método de Predicción de Demanda por Promedio Móvil</h2>
+                    <p>
+                      El método de predicción de demanda por <strong>promedio móvil</strong> es una técnica sencilla y ampliamente utilizada para pronosticar la demanda futura basándose en datos históricos. Su objetivo es suavizar las fluctuaciones aleatorias en los datos y proporcionar una estimación más estable de la demanda. A continuación, te explico cómo funciona:
+                    </p>
+                  
+                    <h3>Concepto Básico</h3>
+                    <p>
+                      El promedio móvil calcula la demanda futura como el promedio de los valores de demanda de un número específico de períodos anteriores. Este método supone que la demanda futura será similar a la demanda pasada reciente.
+                    </p>
+                    <strong>Promedio móvil simple (PMS):</strong>
+                    <ul>
+                        <li>Se calcula tomando la media aritmética de los últimos \( n \) períodos.</li>
+                        <li>
+                        Fórmula:
+                        \[
+                        \text{PMS} = \frac{D_1 + D_2 + D_3 + \dots + D_n}{n}
+                        \]
+                        Donde:
+                        <ul>
+                            <li>\( D_1, D_2, \dots, D_n \) son los valores de demanda de los últimos \( n \) períodos.</li>
+                            <li>\( n \) es el número de períodos considerados.</li>
+                        </ul>
+                        </li>
+                    </ul>
+                  
+                    <h3>Pasos para Aplicar el Método</h3>
+                    <ol>
+                      <li>Selecciona el número de períodos (\( n \)) que se incluirán en el cálculo.</li>
+                      <li>Suma los valores de demanda de los últimos \( n \) períodos.</li>
+                      <li>Divide la suma entre \( n \) (para el promedio móvil simple) o aplica los pesos correspondientes (para el promedio móvil ponderado).</li>
+                      <li>El resultado es la predicción de demanda para el próximo período.</li>
+                    </ol>
+                  
+                    <h3>Ejemplo</h3>
+                    <p>
+                      Supongamos que tienes los siguientes datos de demanda mensual (en unidades):
+                    </p>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Mes</th>
+                          <th>Demanda</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Enero</td>
+                          <td>100</td>
+                        </tr>
+                        <tr>
+                          <td>Febrero</td>
+                          <td>120</td>
+                        </tr>
+                        <tr>
+                          <td>Marzo</td>
+                          <td>110</td>
+                        </tr>
+                        <tr>
+                          <td>Abril</td>
+                          <td>130</td>
+                        </tr>
+                        <tr>
+                          <td>Mayo</td>
+                          <td>140</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  
+                    <p>
+                      <strong>Promedio móvil simple (n = 3):</strong>
+                      <br>
+                      Para predecir la demanda de junio:
+                      \[
+                      \text{PMS} = \frac{110 + 130 + 140}{3} = \frac{380}{3} \approx 126.67
+                      \]
+                      La predicción para junio sería aproximadamente <strong>127 unidades</strong>.
+                    </p>
+                  
+                    <h3>Ventajas</h3>
+                    <ul>
+                      <li>Fácil de entender y aplicar.</li>
+                      <li>Útil cuando la demanda es estable y no tiene tendencias o estacionalidades marcadas.</li>
+                      <li>Suaviza las fluctuaciones aleatorias en los datos.</li>
+                    </ul>
+                  
+                    <h3>Desventajas</h3>
+                    <ul>
+                      <li>No considera tendencias, estacionalidades o cambios abruptos en la demanda.</li>
+                      <li>Requiere almacenar datos históricos.</li>
+                      <li>Puede ser menos preciso en comparación con métodos más avanzados, como el suavizado exponencial o modelos de regresión.</li>
+                    </ul>
+                  
+                    <h3>Cuándo Usarlo</h3>
+                    <p>
+                      El promedio móvil es ideal para situaciones en las que:
+                    </p>
+                    <ul>
+                      <li>La demanda es relativamente estable.</li>
+                      <li>No hay patrones complejos en los datos.</li>
+                      <li>Se necesita un método rápido y sencillo para pronósticos a corto plazo.</li>
+                    </ul>
+                </div>
+
+                <!-- Contenido de las pestañas -->
+                <div id="Promedio Movil Ponderado" class="tabcontent">
+                    <h2>Método de Predicción de Demanda por Promedio Móvil Ponderado</h2>
+                    <p>
+                      El método de predicción de demanda por <strong>promedio móvil ponderado</strong> es una variante del promedio móvil simple que asigna diferentes pesos a los datos históricos, dando mayor importancia a los períodos más recientes. Esto permite una mayor flexibilidad y precisión en los pronósticos, especialmente cuando la demanda reciente es más relevante para predecir el futuro.
+                    </p>
+                  
+                    <h3>Concepto Básico</h3>
+                    <p>
+                      El promedio móvil ponderado calcula la demanda futura como una media ponderada de los valores de demanda de un número específico de períodos anteriores. A diferencia del promedio móvil simple, este método permite asignar mayor peso a los datos más recientes, lo que lo hace más sensible a cambios recientes en la demanda.
+                    </p>
+                  
+                    <h3>Fórmula del Promedio Móvil Ponderado</h3>
+                    <p>
+                      La fórmula para calcular el promedio móvil ponderado es:
+                      \[
+                      \text{PMP} = \frac{w_1 D_1 + w_2 D_2 + \dots + w_n D_n}{w_1 + w_2 + \dots + w_n}
+                      \]
+                      Donde:
+                      <ul>
+                        <li>\( D_1, D_2, \dots, D_n \) son los valores de demanda de los últimos \( n \) períodos.</li>
+                        <li>\( w_1, w_2, \dots, w_n \) son los pesos asignados a cada período.</li>
+                        <li>\( n \) es el número de períodos considerados.</li>
+                      </ul>
+                    </p>
+                  
+                    <h3>Pasos para Aplicar el Método</h3>
+                    <ol>
+                      <li>Selecciona el número de períodos (\( n \)) que se incluirán en el cálculo.</li>
+                      <li>Asigna pesos a cada uno de los períodos, dando mayor peso a los datos más recientes.</li>
+                      <li>Multiplica cada valor de demanda por su peso correspondiente.</li>
+                      <li>Suma los resultados de las multiplicaciones.</li>
+                      <li>Divide la suma entre la suma total de los pesos.</li>
+                      <li>El resultado es la predicción de demanda para el próximo período.</li>
+                    </ol>
+                  
+                    <h3>Ejemplo</h3>
+                    <p>
+                      Supongamos que tienes los siguientes datos de demanda mensual (en unidades):
+                    </p>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Mes</th>
+                          <th>Demanda</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Enero</td>
+                          <td>100</td>
+                        </tr>
+                        <tr>
+                          <td>Febrero</td>
+                          <td>120</td>
+                        </tr>
+                        <tr>
+                          <td>Marzo</td>
+                          <td>110</td>
+                        </tr>
+                        <tr>
+                          <td>Abril</td>
+                          <td>130</td>
+                        </tr>
+                        <tr>
+                          <td>Mayo</td>
+                          <td>140</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  
+                    <p>
+                      <strong>Promedio móvil ponderado (n = 3, pesos: 0.5, 0.3, 0.2):</strong>
+                      <br>
+                      Para predecir la demanda de junio:
+                      \[
+                      \text{PMP} = \frac{(0.5 \times 140) + (0.3 \times 130) + (0.2 \times 110)}{0.5 + 0.3 + 0.2} = \frac{70 + 39 + 22}{1} = 131
+                      \]
+                      La predicción para junio sería <strong>131 unidades</strong>.
+                    </p>
+                  
+                    <h3>Ventajas</h3>
+                    <ul>
+                      <li>Permite dar mayor importancia a los datos más recientes, lo que lo hace más sensible a cambios en la demanda.</li>
+                      <li>Es más flexible que el promedio móvil simple, ya que los pesos pueden ajustarse según la relevancia de los datos.</li>
+                      <li>Útil cuando la demanda reciente es un mejor indicador del futuro.</li>
+                    </ul>
+                  
+                    <h3>Desventajas</h3>
+                    <ul>
+                      <li>Requiere definir los pesos adecuados, lo que puede ser subjetivo y complicado.</li>
+                      <li>No considera tendencias o estacionalidades a largo plazo.</li>
+                      <li>Al igual que el promedio móvil simple, requiere almacenar datos históricos.</li>
+                    </ul>
+                  
+                    <h3>Cuándo Usarlo</h3>
+                    <p>
+                      El promedio móvil ponderado es ideal para situaciones en las que:
+                    </p>
+                    <ul>
+                      <li>La demanda reciente es más relevante que la demanda pasada.</li>
+                      <li>Se necesita un método más flexible que el promedio móvil simple.</li>
+                      <li>La demanda no sigue patrones complejos, como tendencias o estacionalidades fuertes.</li>
+                    </ul>
+                  </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Función para cambiar de pestaña
+        function openModel(evt, modelName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(modelName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // Abre la pestaña por defecto
+        document.getElementById("defaultOpen").click();
+    </script>
 {% endblock %}

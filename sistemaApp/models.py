@@ -19,29 +19,29 @@ class BaseModel(models.Model):
         self.save()
 
 class ModeloInventario(BaseModel):
-    nombreMI = models.CharField(max_length=100, unique=True)
+    nombreMI = models.CharField(max_length=100)
     descripcionMI = models.TextField(default=None, null=True, blank=True)
 
     def __str__(self):
         return f"{self.nombreMI}"
 
-class SubCategory(BaseModel):
-    nombreSubCategory = models.CharField(max_length=100, unique=True)
-    categories = models.ManyToManyField('Category', related_name='subCategories', blank=True)
+class SubCategoria(BaseModel):
+    nombreSubCategoria = models.CharField(max_length=100, unique=True)
+    categories = models.ManyToManyField('Categoria', related_name='subCategories', blank=True)
 
     def __str__(self):
-        return f"{self.nombreSubCategory}"
+        return f"{self.nombreSubCategoria}"
     
     def get_categories(self):
-        return ", ".join([category.nombreCategory for category in self.categories.all()])
+        return ", ".join([Categoria.nombreCategoria for Categoria in self.categories.all()])
     get_categories.short_description = 'Categories'
 
-class Category(BaseModel):
-    nombreCategory = models.CharField(max_length=100, unique=True)
+class Categoria(BaseModel):
+    nombreCategoria= models.CharField(max_length=100, unique=True)
     modeloInventario = models.ForeignKey(ModeloInventario, on_delete=models.PROTECT)
 
     def __str__(self):
-        return f"{self.nombreCategory}"
+        return f"{self.nombreCategoria}"
 
 class Proveedor(BaseModel):
     nombreProveedor = models.CharField(max_length=100, unique=True)
@@ -81,7 +81,7 @@ class Articulo(BaseModel):
     numeroPedidos = models.IntegerField(default=0, null=True, blank=True)
     demandaPredecida = models.IntegerField(default=0, null=True, blank=True)
     descripcionArticulo = models.TextField(default=None, null=True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.PROTECT, null=True, default=None)
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, null=True, default=None)
     proveedor_predefinido = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, default=None)
     marca = models.ForeignKey(Marca, on_delete=models.PROTECT, null=False)
     unidadMedida = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT, null=False)
@@ -94,10 +94,10 @@ class Articulo(BaseModel):
 
     nombre_articulo.short_description = 'Nombre del Artículo'
 
-    def nombre_category(self):
-        return self.category.nombreCategory
+    def nombre_categoria(self):
+        return self.Categoria.nombreCategoria
 
-    nombre_category.short_description = 'Nombre de la Categoria'
+    nombre_categoria.short_description = 'Nombre de la Categoria'
 
     def nombre_proveedor(self):
         return self.proveedor_predefinido.nombreProveedor

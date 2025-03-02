@@ -1,34 +1,43 @@
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from .models import Articulo, EstadoOrdenCompra, OrdenCompra, OrdenVenta
+from .models import Articulo, EstadoOrdenCompra, ModeloInventario
+from django.dispatch import receiver
+from django.db.models.signals import post_migrate
 #Signals se utiliza para definir y conectar funciones que deben ejecutarse en respuesta a ciertas señales de Django
+#Signals se importan y se usan en apps.py 
 
 # Definir estados de orden de compra
+@receiver(post_migrate) #post_migrate es una señal que se envía después de que se ha migrado la base de datos
 def inicializar_estados(sender, **kwargs):
     estados = ['Pendiente', 'Enviada', 'Recibido', 'Cancelada']
     for estado in estados:
         EstadoOrdenCompra.objects.get_or_create(nombreEOC=estado)
 
 # Definir grupos y permisos
+@receiver(post_migrate)
 def create_groups_and_permissions(sender, **kwargs):
     # Crear grupos
     vendedor_group, created = Group.objects.get_or_create(name='Vendedor')
     gerente_group, created = Group.objects.get_or_create(name='Gerente')
 
     # Obtener el tipo de contenido para los modelos relevantes
-    articulo_ct = ContentType.objects.get_for_model(Articulo)
-    orden_compra_ct = ContentType.objects.get_for_model(OrdenCompra)
-    orden_venta_ct = ContentType.objects.get_for_model(OrdenVenta)
+    content_types = ContentType.objects.filter(app_label='sistemaApp')
 
-    # Crear permisos
-    can_view_articulo = Permission.objects.get(codename='view_articulo', content_type=articulo_ct)
-    can_add_orden_compra = Permission.objects.get(codename='add_ordencompra', content_type=orden_compra_ct)
-    can_change_orden_compra = Permission.objects.get(codename='change_ordencompra', content_type=orden_compra_ct)
-    can_delete_orden_compra = Permission.objects.get(codename='delete_ordencompra', content_type=orden_compra_ct)
-    can_add_orden_venta = Permission.objects.get(codename='add_ordenventa', content_type=orden_venta_ct)
-    can_change_orden_venta = Permission.objects.get(codename='change_ordenventa', content_type=orden_venta_ct)
-    can_delete_orden_venta = Permission.objects.get(codename='delete_ordenventa', content_type=orden_venta_ct)
+    # Crear permisos y asignarlos al grupo de Vendedores
+    for content_type in content_types:
+        permissions = Permission.objects.filter(content_type=content_type)
+        for permission in permissions:
+            vendedor_group.permissions.add(permission)
 
-    # Asignar permisos a grupos
-    vendedor_group.permissions.set([can_view_articulo, can_add_orden_venta])
-    gerente_group.permissions.set([can_view_articulo, can_add_orden_compra, can_change_orden_compra, can_delete_orden_compra, can_add_orden_venta, can_change_orden_venta, can_delete_orden_venta])
+    # Guardar los cambios
+    vendedor_group.save()
+    gerente_group.save()
+
+
+@receiver(post_migrate)
+def create_modelo_inventario(sender, **kwargs):
+    # Crear modelo de inventario
+    modelo_lote_fijo, created = ModeloInventario.objects.get_or_create(nombreMI='Modelo Lote Fijo')
+    modelo_intervalo_fijo, created = ModeloInventario.objects.get_or_create(nombreMI='Modelo Intervalo Fijo')
+
+    

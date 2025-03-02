@@ -8,8 +8,8 @@ from django.shortcuts import redirect
 from django.db import transaction
 from sistemaApp.models import (
     Articulo,
-    Category,
-    SubCategory,
+    Categoria,
+    SubCategoria,
     Marca,
     UnidadMedida,
     EstadoOrdenCompra,
@@ -46,19 +46,19 @@ class LogicalDeletionMixin:
             self.message_user(request, f"Error al realizar la activación lógica: {e}", messages.ERROR)
     Activacion_Logica.short_description = "Activación Lógica"
 
-class CategoryAdmin(admin.ModelAdmin, LogicalDeletionMixin):
-    list_display = ('id', 'nombreCategory', 'modeloInventario', 'fechaHoraBaja')
-    search_fields = ('id','nombreCategory')
-    ordering = ('nombreCategory',)
-    list_display_links = ('nombreCategory',)
+class CategoriaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombreCategoria', 'modeloInventario', 'fechaHoraBaja')
+    search_fields = ('id','nombreCategoria')
+    ordering = ('nombreCategoria',)
+    list_display_links = ('nombreCategoria',)
     exclude = ('fechaHoraBaja',)
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
 
-class SubCategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreSubCategory', 'get_categories','fechaHoraBaja')
-    search_fields = ('id','nombreSubCategory')  
-    ordering = ('nombreSubCategory',)
-    list_display_links = ('nombreSubCategory',)
+class SubCategoriaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombreSubCategoria', 'get_categories','fechaHoraBaja')
+    search_fields = ('id','nombreSubCategoria')  
+    ordering = ('nombreSubCategoria',)
+    list_display_links = ('nombreSubCategoria',)
     exclude = ('fechaHoraBaja',)
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
 
@@ -107,7 +107,7 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
             )
         
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','loteOptimo','category','proveedor_predefinido','marca','fechaHoraBaja')
+    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','loteOptimo','categoria','proveedor_predefinido','marca','fechaHoraBaja')
     search_fields = ('id','nombreArticulo')
     ordering = ('id',)
     list_display_links = ('nombreArticulo',)
@@ -138,7 +138,7 @@ class OrdenCompraAdmin(admin.ModelAdmin):
     ordering = ('estadoOrdenCompra__nombreEOC',)
 
     def estadoOrdenCompra(self):
-        return self.nombreCategory
+        return self.nombreCategoria
     estadoOrdenCompra.short_description = 'Estado Orden Compra'
     
     def has_add_permission(self, request):
@@ -237,12 +237,20 @@ class AccionesAdmin(admin.ModelAdmin):
         # Devuelve False para deshabilitar la opción de modificar instancias existentes
         return False
 
-admin.site.register(Category,CategoryAdmin)
-admin.site.register(SubCategory,SubCategoryAdmin)
+class ModeloInventarioAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombreMI', 'fechaHoraBaja')
+    search_fields = ('id','nombreMI')
+    ordering = ('id',)
+    list_display_links = ('nombreMI',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
+    
+admin.site.register(Categoria,CategoriaAdmin)
+admin.site.register(SubCategoria,SubCategoriaAdmin)
 admin.site.register(Marca,MarcaAdmin)
 admin.site.register(UnidadMedida,UnidadMedidaAdmin)
 admin.site.register(Articulo,ArticuloAdmin)
-admin.site.register(ModeloInventario)
+admin.site.register(ModeloInventario, ModeloInventarioAdmin)
 admin.site.register(EstadoOrdenCompra,EstadoOrdenCompraAdmin)
 admin.site.register(OrdenCompra,OrdenCompraAdmin)
 admin.site.register(Proveedor,ProveedorAdmin)
