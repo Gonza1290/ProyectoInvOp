@@ -131,7 +131,7 @@ class ProveedorAdmin(admin.ModelAdmin):
          
 class DemandaHistoricaAdmin(admin.ModelAdmin):
     list_display = ('id', 'mes', 'año','cantidadDemanda','articulo')
-    ordering = ('id',)
+    ordering = ('mes','año',)
     
 class OrdenCompraAdmin(admin.ModelAdmin):
     list_display = ('id', 'articulo', 'fechaHoraCompra','cantidadLote','montoTotal','estadoOrdenCompra','proveedor')
@@ -218,7 +218,7 @@ class AccionesAdmin(admin.ModelAdmin):
             reverse('sistemaApp:crear_orden_venta', args=[obj.id])
         )
         acciones_html += '<a class="btn btn-info btn-sm" href="{}">Predecir Demanda</a>&nbsp;&nbsp;'.format(
-            reverse('sistemaApp:predecir_demanda_view', args=[obj.id])
+            reverse('sistemaApp:predecir_demanda', args=[obj.id])
         )
         acciones_html += '<a class="btn btn-warning btn-sm" href="{}">CGI</a>'.format(
             reverse('sistemaApp:cgi', args=[obj.id])

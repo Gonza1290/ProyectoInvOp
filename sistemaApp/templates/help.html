@@ -46,12 +46,6 @@
 
 {% block title %}Help | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
-{% block branding %}
-    <h1 id="site-name">
-        <a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
-    </h1>
-{% endblock %}
-
 {% block content %}
     <div class="content-wrapper">
         <div class="card">
@@ -62,6 +56,7 @@
                     <button class="tablinks" onclick="openModel(event, 'POQ')">Modelo POQ</button>
                     <button class="tablinks" onclick="openModel(event, 'Promedio Movil')">Promedio Movil</button>
                     <button class="tablinks" onclick="openModel(event, 'Promedio Movil Ponderado')">Promedio Movil Ponderado</button>
+                    <button class="tablinks" onclick="openModel(event, 'Suavizacion Exponencial')">Suavizacion Exponencial</button>
                 </div>
 
                 <!-- Contenido de las pestañas -->
@@ -450,6 +445,142 @@
                       <li>La demanda no sigue patrones complejos, como tendencias o estacionalidades fuertes.</li>
                     </ul>
                   </div>
+                  <!-- Contenido de las pestañas -->
+                <div id="Suavizacion Exponencial" class="tabcontent">
+                  <h2>Método de Suavización Exponencial</h2>
+                  <p>
+                    La <strong>suavización exponencial</strong> es un método de pronóstico de demanda que se utiliza para predecir valores futuros basándose en datos históricos. A diferencia del promedio móvil, este método asigna mayor peso a los datos más recientes y reduce gradualmente la importancia de los datos más antiguos. Es ampliamente utilizado por su simplicidad y eficacia en situaciones donde la demanda tiene un comportamiento estable o con tendencia.
+                  </p>
+                
+                  <h3>Concepto Básico</h3>
+                  <p>
+                    La suavización exponencial calcula el pronóstico como una combinación ponderada del valor real más reciente y el pronóstico anterior. La clave de este método es el uso de un <strong>factor de suavización (α)</strong>, que determina cuánto peso se le da a los datos recientes frente a los datos históricos.
+                  </p>
+                
+                  <h3>Fórmula de Suavización Exponencial Simple</h3>
+                  <p>
+                    La fórmula básica para la suavización exponencial simple es:
+                    \[
+                    F_{t+1} = \alpha \cdot D_t + (1 - \alpha) \cdot F_t
+                    \]
+                    Donde:
+                    <ul>
+                      <li>\( F_{t+1} \): Pronóstico para el período \( t+1 \).</li>
+                      <li>\( D_t \): Valor real de la demanda en el período \( t \).</li>
+                      <li>\( F_t \): Pronóstico para el período \( t \).</li>
+                      <li>\( \alpha \): Factor de suavización (\( 0 \leq \alpha \leq 1 \)).</li>
+                    </ul>
+                  </p>
+                
+                  <h3>Pasos para Aplicar el Método</h3>
+                  <ol>
+                    <li>Selecciona un valor inicial para el pronóstico (\( F_1 \)). Esto puede ser el primer valor real o un promedio de los primeros períodos.</li>
+                    <li>Elige el factor de suavización (\( \alpha \)). Un valor cercano a 1 da más peso a los datos recientes, mientras que un valor cercano a 0 da más peso a los datos históricos.</li>
+                    <li>Calcula el pronóstico para el siguiente período usando la fórmula de suavización exponencial.</li>
+                    <li>Repite el proceso para cada período subsiguiente.</li>
+                  </ol>
+                
+                  <h3>Ejemplo</h3>
+                  <p>
+                    Supongamos que tienes los siguientes datos de demanda mensual (en unidades):
+                  </p>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mes</th>
+                        <th>Demanda Real (\( D_t \))</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Enero</td>
+                        <td>100</td>
+                      </tr>
+                      <tr>
+                        <td>Febrero</td>
+                        <td>120</td>
+                      </tr>
+                      <tr>
+                        <td>Marzo</td>
+                        <td>110</td>
+                      </tr>
+                      <tr>
+                        <td>Abril</td>
+                        <td>130</td>
+                      </tr>
+                      <tr>
+                        <td>Mayo</td>
+                        <td>140</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                
+                  <p>
+                    <strong>Suavización exponencial con \( \alpha = 0.3 \):</strong>
+                    <br>
+                    Supongamos que el pronóstico inicial para enero (\( F_1 \)) es 100.
+                  </p>
+                  <ul>
+                    <li>
+                      <strong>Febrero:</strong>
+                      \[
+                      F_2 = 0.3 \cdot 100 + (1 - 0.3) \cdot 100 = 30 + 70 = 100
+                      \]
+                    </li>
+                    <li>
+                      <strong>Marzo:</strong>
+                      \[
+                      F_3 = 0.3 \cdot 120 + (1 - 0.3) \cdot 100 = 36 + 70 = 106
+                      \]
+                    </li>
+                    <li>
+                      <strong>Abril:</strong>
+                      \[
+                      F_4 = 0.3 \cdot 110 + (1 - 0.3) \cdot 106 = 33 + 74.2 = 107.2
+                      \]
+                    </li>
+                    <li>
+                      <strong>Mayo:</strong>
+                      \[
+                      F_5 = 0.3 \cdot 130 + (1 - 0.3) \cdot 107.2 = 39 + 75.04 = 114.04
+                      \]
+                    </li>
+                    <li>
+                      <strong>Junio:</strong>
+                      \[
+                      F_6 = 0.3 \cdot 140 + (1 - 0.3) \cdot 114.04 = 42 + 79.83 = 121.83
+                      \]
+                    </li>
+                  </ul>
+                
+                  <h3>Ventajas</h3>
+                  <ul>
+                    <li>Fácil de implementar y calcular.</li>
+                    <li>Se adapta rápidamente a cambios en la demanda debido al mayor peso en los datos recientes.</li>
+                    <li>Requiere almacenar menos datos históricos en comparación con otros métodos.</li>
+                  </ul>
+                
+                  <h3>Desventajas</h3>
+                  <ul>
+                    <li>No es adecuado para datos con tendencias o estacionalidades fuertes (en su forma simple).</li>
+                    <li>La elección del factor de suavización (\( \alpha \)) puede ser subjetiva.</li>
+                  </ul>
+                
+                  <h3>Cuándo Usarlo</h3>
+                  <p>
+                    La suavización exponencial es ideal para situaciones en las que:
+                  </p>
+                  <ul>
+                    <li>La demanda es relativamente estable o tiene cambios graduales.</li>
+                    <li>Se necesita un método simple y eficiente para pronósticos a corto plazo.</li>
+                    <li>No hay patrones complejos, como tendencias o estacionalidades fuertes.</li>
+                  </ul>
+                
+                  <h3>Conclusión</h3>
+                  <p>
+                    La suavización exponencial es una herramienta poderosa y flexible para pronósticos de demanda, especialmente cuando se desea dar mayor importancia a los datos recientes. Sin embargo, para datos con tendencias o estacionalidades, se recomienda utilizar variantes más avanzadas, como la suavización exponencial con tendencia o estacionalidad.
+                  </p>
+                </div>
             </div>
         </div>
     </div>

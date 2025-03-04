@@ -3,6 +3,22 @@ from .models import OrdenCompra,ErrorType,OrdenVenta
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import datetime
 
+# Enumeracion
+MESES_CHOICES = [
+        (1, 'Enero'),
+        (2, 'Febrero'),
+        (3, 'Marzo'),
+        (4, 'Abril'),
+        (5, 'Mayo'),
+        (6, 'Junio'),
+        (7, 'Julio'),
+        (8, 'Agosto'),
+        (9, 'Septiembre'),
+        (10, 'Octubre'),
+        (11, 'Noviembre'),
+        (12, 'Diciembre'),
+]
+
 #Formulario OrdenCompra
 class OrdenCompraForm(forms.ModelForm):
     class Meta:
@@ -30,22 +46,8 @@ class OrdenVentaForm(forms.ModelForm):
 
 # Formularios tipos de predicción demanda
 class PromedioMovilForm(forms.Form):
-    periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados (Meses)')
-    MESES_CHOICES = [
-        (1, 'Enero'),
-        (2, 'Febrero'),
-        (3, 'Marzo'),
-        (4, 'Abril'),
-        (5, 'Mayo'),
-        (6, 'Junio'),
-        (7, 'Julio'),
-        (8, 'Agosto'),
-        (9, 'Septiembre'),
-        (10, 'Octubre'),
-        (11, 'Noviembre'),
-        (12, 'Diciembre'),
-    ]
-    mesApredecir = forms.ChoiceField(
+    periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados (Meses)',initial=3)
+    mes_a_predecir = forms.ChoiceField(
         label='Mes a predecir',
         choices=MESES_CHOICES,
         help_text='Solo el proximo mes o meses anteriores'
@@ -65,8 +67,8 @@ class PromedioMovilForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(PromedioMovilForm, self).__init__(*args, **kwargs)
         mes_actual = datetime.now().month
-        self.fields['mesApredecir'].choices = [
-            (mes, nombre) for mes, nombre in self.MESES_CHOICES if mes <= mes_actual + 1
+        self.fields['mes_a_predecir'].choices = [
+            (mes, nombre) for mes, nombre in MESES_CHOICES if mes <= mes_actual + 1
         ]
         
     def clean_periodosConsiderados(self):
@@ -76,7 +78,12 @@ class PromedioMovilForm(forms.Form):
         return periodos
     
 class PromedioMovilPonderadoForm(forms.Form):
-    periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados')
+    periodosConsiderados = forms.IntegerField(label='Periodos Históricos Considerados (Meses)',initial=3)
+    mes_a_predecir = forms.ChoiceField(
+        label='Mes a predecir',
+        choices=MESES_CHOICES,
+        help_text='Solo el proximo mes o meses anteriores'
+    )
     metodoError = forms.ChoiceField(
         label='Método de error a usar',
         choices=ErrorType.choices,
@@ -106,6 +113,19 @@ class PromedioMovilPonderadoForm(forms.Form):
             raise forms.ValidationError('Ingrese valores numéricos separados por comas válidos.')
 
         return ponderaciones
+    
+    def clean_periodosConsiderados(self):
+        periodos = self.cleaned_data.get('periodosConsiderados')
+        if periodos <= 0:
+            raise forms.ValidationError("El número de periodos debe ser mayor que cero.")
+        return periodos
+    
+    def __init__(self, *args, **kwargs):
+        super(PromedioMovilPonderadoForm, self).__init__(*args, **kwargs)
+        mes_actual = datetime.now().month
+        self.fields['mes_a_predecir'].choices = [
+            (mes, nombre) for mes, nombre in MESES_CHOICES if mes <= mes_actual + 1
+        ]
 
 class SuavizacionExponencialForm(forms.Form):
     prediccionDemanda = forms.IntegerField(label='Predicción Demanda Último Periodo')
@@ -120,7 +140,6 @@ class SuavizacionExponencialForm(forms.Form):
         validators=[MinValueValidator(1), MaxValueValidator(100)],
         help_text='Ingrese un valor entre 1 y 100'
     )
-    
     
     
 #Formulario CGI
