@@ -54,3 +54,21 @@
     <!-- /.sidebar -->
 </aside>
 {% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var iframes = document.querySelectorAll('iframe');
+            iframes.forEach(function(iframe) {
+                iframe.onload = function() {
+                    var iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+                    var inputElement = iframeDocument.querySelector('input[autofocus]');
+                    if (inputElement) {
+                        inputElement.focus();
+                    }
+                };
+            });
+        });
+    </script>
+{% endblock %}

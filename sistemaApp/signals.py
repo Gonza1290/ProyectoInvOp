@@ -3,6 +3,8 @@ from django.contrib.contenttypes.models import ContentType
 from .models import Articulo, EstadoOrdenCompra, ModeloInventario
 from django.dispatch import receiver
 from django.db.models.signals import post_migrate
+from django.contrib.auth.models import User
+
 #Signals se utiliza para definir y conectar funciones que deben ejecutarse en respuesta a ciertas señales de Django
 #Signals se importan y se usan en apps.py 
 
@@ -39,5 +41,10 @@ def create_modelo_inventario(sender, **kwargs):
     # Crear modelo de inventario
     modelo_lote_fijo, created = ModeloInventario.objects.get_or_create(nombreMI='Modelo Lote Fijo')
     modelo_intervalo_fijo, created = ModeloInventario.objects.get_or_create(nombreMI='Modelo Intervalo Fijo')
-
-    
+@receiver(post_migrate)
+def create_user(sender, **kwargs):
+    # Crear usuario si no existe
+    user, created = User.objects.get_or_create(username='invitado')
+    if created:
+        user.set_password('hola2025')
+        user.save()

@@ -8,12 +8,22 @@
             <div class="col-12">
                 <h1>Resultados de Prediccion Demanda</h1>
                 <p>Mes a Predecir Demanda: {{ mes_a_predecir }}</p>
-                <p>Demanda Real: {{ demanda_real_proxima }} </p>
+                {% if demanda_real_anterior and prediccion_mes_anterior %}
+                    <p>Demanda Real de mes anterior: {{ demanda_real_anterior }}</p>
+                    <p>Prediccion Mes Anterior: {{ prediccion_mes_anterior }}</p>
+                {% endif %}
+                {% if demanda_real_proxima %}
+                    <p>Demanda Real: {{ demanda_real_proxima }} </p>
+                {% endif %}
+
                 <p>Demanda Predecida: {{ demanda_predecida }}</p>
-                <p>Error Calculado: {{ error_calculado }}</p>
-                <p>Error Aceptable: {{ error_aceptable }}</p>
-                <p>Cuanto representa el error con respecto al real: {{ diferencia_real_pronostico }}</p>
-                <p>Decision: {{ decision }}</p>
+
+                {% if error_calculado and error_aceptable and diferencia_real_pronostico and decision %}
+                    <p>Error Calculado: {{ error_calculado }}</p>
+                    <p>Error Aceptable: {{ error_aceptable }}</p>
+                    <p>Cuanto representa el error con respecto al real: {{ diferencia_real_pronostico }}</p>
+                    <p>Decision: {{ decision }}</p>
+                {% endif %}
             </div>
         </div>
     </div>

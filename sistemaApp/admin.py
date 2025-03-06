@@ -18,7 +18,8 @@ from sistemaApp.models import (
     DemandaHistorica,
     Accione,
     OrdenVenta,
-    ModeloInventario
+    ModeloInventario,
+    MedioPago
 )
 
 from django.contrib import messages
@@ -55,7 +56,7 @@ class CategoriaAdmin(admin.ModelAdmin):
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
 
 class SubCategoriaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreSubCategoria', 'get_categories','fechaHoraBaja')
+    list_display = ('id', 'nombreSubCategoria','categoria','fechaHoraBaja')
     search_fields = ('id','nombreSubCategoria')  
     ordering = ('nombreSubCategoria',)
     list_display_links = ('nombreSubCategoria',)
@@ -107,7 +108,7 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
             )
         
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioArticulo','loteOptimo','categoria','proveedor_predefinido','marca','fechaHoraBaja')
+    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioVenta','loteOptimo','subCategoria','proveedor_predefinido','marca','fechaHoraBaja')
     search_fields = ('id','nombreArticulo')
     ordering = ('id',)
     list_display_links = ('nombreArticulo',)
@@ -130,8 +131,8 @@ class ProveedorAdmin(admin.ModelAdmin):
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
          
 class DemandaHistoricaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'mes', 'año','cantidadDemanda','articulo')
-    ordering = ('mes','año',)
+    list_display = ('id', 'mes', 'año', 'cantidadDemanda', 'articulo')
+    ordering = ('-año', '-mes',)  # Ordenar por año y mes en orden descendente
     
 class OrdenCompraAdmin(admin.ModelAdmin):
     list_display = ('id', 'articulo', 'fechaHoraCompra','cantidadLote','montoTotal','estadoOrdenCompra','proveedor')
@@ -245,6 +246,14 @@ class ModeloInventarioAdmin(admin.ModelAdmin):
     exclude = ('fechaHoraBaja',)
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
     
+class MedioPagoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombreMedioPago', 'descripcionMedioPago')
+    search_fields = ('id','nombreMedioPago')
+    ordering = ('id',)
+    list_display_links = ('nombreMedioPago',)
+    exclude = ('fechaHoraBaja',)
+    actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
+    
 admin.site.register(Categoria,CategoriaAdmin)
 admin.site.register(SubCategoria,SubCategoriaAdmin)
 admin.site.register(Marca,MarcaAdmin)
@@ -257,5 +266,6 @@ admin.site.register(Proveedor,ProveedorAdmin)
 admin.site.register(DemandaHistorica,DemandaHistoricaAdmin)
 admin.site.register(Accione,AccionesAdmin)
 admin.site.register(OrdenVenta,OrdenVentaAdmin)
+admin.site.register(MedioPago,MedioPagoAdmin)
 
 

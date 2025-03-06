@@ -1,7 +1,8 @@
 from django import forms
-from .models import OrdenCompra,ErrorType,OrdenVenta
+from .models import OrdenCompra,ErrorType,OrdenVenta,MedioPago
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import datetime
+from .utils import obtener_mes,obtener_nombre_mes
 
 # Enumeracion
 MESES_CHOICES = [
@@ -36,13 +37,14 @@ class OrdenCompraForm(forms.ModelForm):
 class OrdenVentaForm(forms.ModelForm):
     class Meta:
         model = OrdenVenta
-        fields = ['cantidadVendida', 'articulo']  
+        fields = ['cantidadVendida', 'articulo','medioPago']  
 
     def __init__(self, *args, **kwargs):
         super(OrdenVentaForm, self).__init__(*args, **kwargs)
         if 'initial' in kwargs:
             initial = kwargs['initial']
             self.fields['articulo'].initial = initial.get('articulo')
+        self.fields['medioPago'].queryset = MedioPago.objects.all()
 
 # Formularios tipos de predicción demanda
 class PromedioMovilForm(forms.Form):
@@ -61,7 +63,8 @@ class PromedioMovilForm(forms.Form):
     errorAceptable = forms.IntegerField(
         label='Error Aceptable (%)',
         validators=[MinValueValidator(1), MaxValueValidator(100)],
-        help_text='Ingrese un valor entre 1 y 100'
+        help_text='Ingrese un valor entre 1 y 100',
+        initial=5
     )
     
     def __init__(self, *args, **kwargs):
@@ -97,7 +100,8 @@ class PromedioMovilPonderadoForm(forms.Form):
     errorAceptable = forms.IntegerField(
         label='Error Aceptable (%)',
         validators=[MinValueValidator(1), MaxValueValidator(100)],
-        help_text='Ingrese un valor entre 1 y 100'
+        help_text='Ingrese un valor entre 1 y 100',
+        initial=5
     )
     def clean_ponderaciones(self):
         ponderaciones = self.cleaned_data.get('ponderaciones')
@@ -128,7 +132,7 @@ class PromedioMovilPonderadoForm(forms.Form):
         ]
 
 class SuavizacionExponencialForm(forms.Form):
-    prediccionDemanda = forms.IntegerField(label='Predicción Demanda Último Periodo')
+    prediccionDemanda = forms.IntegerField(label=f'Predicción Demanda de Periodo Anterior ({obtener_nombre_mes(datetime.now().month-1)})',min_value=0,)
     coefSuavizacion = forms.DecimalField(label='Coeficiente de Suavización',min_value=0.0,max_value=1.0,initial=0.05)
     metodoError = forms.ChoiceField(
         label='Método de error a usar',
@@ -138,7 +142,8 @@ class SuavizacionExponencialForm(forms.Form):
     errorAceptable = forms.IntegerField(
         label='Error Aceptable (%)',
         validators=[MinValueValidator(1), MaxValueValidator(100)],
-        help_text='Ingrese un valor entre 1 y 100'
+        help_text='Ingrese un valor entre 1 y 100',
+        initial=5
     )
     
     

@@ -8,6 +8,7 @@ from datetime import datetime
 from django.shortcuts import redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse
+from .utils import generar_rango_meses, obtener_nombre_mes
 
 def index(request):
     return redirect('/admin/')
@@ -30,7 +31,7 @@ def crear_orden_compra(request, articulo_id):
             if not ordenes_pend_enviada.exists():
                 orden_compra = form.save(commit=False)
                 orden_compra.estadoOrdenCompra = estado_enviada
-                orden_compra.montoTotal = articulo.precioArticulo * form.cleaned_data['cantidadLote']
+                orden_compra.montoTotal = articulo.precioVenta * form.cleaned_data['cantidadLote']
                 orden_compra.save()
                 messages.success(request, f'Se ha creado una orden de compra para {articulo.nombreArticulo}.')
                 return redirect('/admin/sistemaApp/accione/')
@@ -170,7 +171,8 @@ def procesar_promedio_movil(request, form, articulo_id):
     demanda_predecida = sum(demanda_historica.cantidadDemanda for demanda_historica in demanda_historicas) / periodos
     metodo_error = form.cleaned_data['metodoError']
     try:
-        demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_a_predecir, articulo=articulo_id).cantidadDemanda
+        anio_actual = datetime.now().year
+        demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_a_predecir, articulo=articulo_id,año = anio_actual).cantidadDemanda
     except DemandaHistorica.DoesNotExist:
         demanda_real_proxima = None
 
@@ -217,7 +219,8 @@ def procesar_promedio_movil_ponderado(request, form, articulo_id):
     demanda_predecida = sum(demanda_historica.cantidadDemanda * ponderacion for demanda_historica, ponderacion in zip(demanda_historicas, ponderaciones)) / sum(ponderaciones)
     metodo_error = form.cleaned_data['metodoError']
     try:
-        demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_a_predecir, articulo=articulo_id).cantidadDemanda
+        anio_actual = datetime.now().year
+        demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_a_predecir, articulo=articulo_id,año = anio_actual).cantidadDemanda
     except DemandaHistorica.DoesNotExist:
         demanda_real_proxima = None
 
@@ -243,23 +246,30 @@ def procesar_promedio_movil_ponderado(request, form, articulo_id):
     }
 
 def procesar_suavizacion_exponencial(request, form, articulo_id):
-    mes_actual = datetime.now().month
-    demanda_real = DemandaHistorica.objects.get(mes=mes_actual-1).cantidadDemanda
-    ultima_prediccion_demanda = form.cleaned_data['prediccionDemanda']
-    coef_suavizacion = form.cleaned_data['coefSuavizacion']
-    demanda_predecida = ultima_prediccion_demanda + coef_suavizacion * (demanda_real - ultima_prediccion_demanda)
-
-    metodo_error = form.cleaned_data['metodoError']
-    demanda_real_proxima = DemandaHistorica.objects.get(mes=mes_actual + 1, articulo=articulo_id).cantidadDemanda
-    error_aceptable = form.cleaned_data['errorAceptable']
-    error_calculado, decision, diferencia_real_pronostico = calcularError(demanda_real_proxima, demanda_predecida, error_aceptable, metodo_error, articulo_id)
-    return {
-        'demanda_predecida': demanda_predecida,
-        'error_calculado': error_calculado,
-        'error_aceptable': error_aceptable,
-        'diferencia_real_pronostico': diferencia_real_pronostico,
-        'decision': decision,
-    }
+    mes_a_predecir = datetime.now().month
+    anio_actual = datetime.now().year
+    try:
+        demanda_real_anterior = DemandaHistorica.objects.get(mes=mes_a_predecir-1, articulo=articulo_id,año = anio_actual).cantidadDemanda
+    except DemandaHistorica.DoesNotExist:
+        demanda_real_anterior = None
+        
+    if demanda_real_anterior is not None: 
+        # Calcular demanda predecida 
+        prediccion_mes_anterior = form.cleaned_data['prediccionDemanda']
+        coef_suavizacion = form.cleaned_data['coefSuavizacion']
+        demanda_predecida = prediccion_mes_anterior + coef_suavizacion * (demanda_real_anterior - prediccion_mes_anterior)
+        
+        
+        nombre_mes = obtener_nombre_mes(mes_a_predecir)
+        return {
+            'mes_a_predecir': nombre_mes,
+            'demanda_real_anterior': demanda_real_anterior,
+            'prediccion_mes_anterior': prediccion_mes_anterior,
+            'demanda_predecida': demanda_predecida,
+        }
+    else:
+        messages.error(request, "No se puede calcular la demanda ya que no se tiene la demanda real del mes anterior")
+        
 
 #Funcion para calcular error de prediccion demanda
 def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_error,articulo_id):
@@ -312,7 +322,7 @@ def cgi_view(request,articulo_id):
                 tiempo_entre_pedidos= round(dias_laborales_anual/numero_pedidos)
 
                 #Calculo CGI
-                costo_compra = articulo.precioArticulo * demanda_anual
+                costo_compra = articulo.precioVenta * demanda_anual
                 costo_almacentamiento_total = costo_almacentamiento * (lote_optimo/2)
                 costo_pedido_total= costo_pedido * (demanda_anual/lote_optimo)
                 cgi = costo_compra + costo_almacentamiento_total + costo_pedido_total
@@ -354,7 +364,7 @@ def cgi_view(request,articulo_id):
                 tiempo_entre_pedidos= round(((2/demanda_anual)*(costo_pedido/costo_almacentamiento)*(1/(1 - demanda_anual/tasa_produccion_anual)))**0.5)
                 
                 #Calculo CGI
-                costo_compra = articulo.precioArticulo * demanda_anual
+                costo_compra = articulo.precioVenta * demanda_anual
                 costo_almacentamiento_total = costo_almacentamiento * (lote_optimo/2)
                 costo_pedido_total= costo_pedido * (demanda_anual/lote_optimo)
                 cgi = costo_compra + costo_almacentamiento_total + costo_pedido_total
@@ -403,7 +413,7 @@ def crear_orden_venta(request,articulo_id):
             if articulo.stockActual < cantidad_vendida:
                 messages.error(request,f'Stock insuficiente de {articulo.nombreArticulo}, stock actual: {articulo.stockActual}')
             else:
-                precio_articulo = articulo.precioArticulo
+                precio_articulo = articulo.precioVenta
                 monto_total = precio_articulo * cantidad_vendida
                 fecha_hora_venta= datetime.now()
                 orden_venta = form.save(commit=False)
@@ -418,7 +428,7 @@ def crear_orden_venta(request,articulo_id):
                     estado_pendiente = get_object_or_404(EstadoOrdenCompra, nombreEOC='Pendiente')
                     orden_compra = OrdenCompra.objects.create(
                         cantidadLote=articulo.loteOptimo, 
-                        montoTotal= articulo.precioArticulo * articulo.loteOptimo,
+                        montoTotal= articulo.precioVenta * articulo.loteOptimo,
                         estadoOrdenCompra=estado_pendiente,
                         articulo= articulo,
                         proveedor=  articulo.proveedor_predefinido,
@@ -435,34 +445,3 @@ def crear_orden_venta(request,articulo_id):
 @staff_member_required
 def help(request):
     return render(request, 'help.html')
-
-def obtener_nombre_mes(numero_mes):
-    numero_mes = int(numero_mes)
-    MESES = {
-        1: "Enero",
-        2: "Febrero",
-        3: "Marzo",
-        4: "Abril",
-        5: "Mayo",
-        6: "Junio",
-        7: "Julio",
-        8: "Agosto",
-        9: "Septiembre",
-        10: "Octubre",
-        11: "Noviembre",
-        12: "Diciembre"
-    }
-    return MESES.get(numero_mes, "Mes desconocido")
-
-def generar_rango_meses(mes_a_predecir, periodos):
-    mes_a_predecir = int(mes_a_predecir)
-    anio_actual = datetime.now().year
-    rango_meses = []
-    for i in range(periodos):
-        mes = mes_a_predecir - i - 1
-        anio = anio_actual
-        if mes <= 0:
-            mes += 12
-            anio -= 1
-        rango_meses.append((mes, anio))
-    return rango_meses
