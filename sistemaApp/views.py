@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
-from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica,ErrorType
+from .models import Articulo, OrdenCompra, EstadoOrdenCompra,DemandaHistorica,ErrorType,ModeloInventario,Categoria
 from .forms import OrdenCompraForm,PromedioMovilForm,PromedioMovilPonderadoForm,SuavizacionExponencialForm,ModeloLoteFijoForm,ModeloIntervaloFijoForm,OrdenVentaForm
 from django import forms
 from datetime import datetime
@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse
 from .utils import generar_rango_meses, obtener_nombre_mes
+from django.utils.safestring import mark_safe
 
 def index(request):
     return redirect('/admin/')
@@ -33,10 +34,10 @@ def crear_orden_compra(request, articulo_id):
                 orden_compra.estadoOrdenCompra = estado_enviada
                 orden_compra.montoTotal = articulo.precioVenta * form.cleaned_data['cantidadLote']
                 orden_compra.save()
-                messages.success(request, f'Se ha creado una orden de compra para {articulo.nombreArticulo}.')
+                messages.success(request, mark_safe(f'Se ha creado una orden de compra para {articulo.nombreArticulo}. <a href="/admin/sistemaApp/ordencompra/">Ver órdenes de compra</a>'))                
                 return redirect('/admin/sistemaApp/accione/')
             else:
-                messages.error(request, f'Ya existen ordenes pendientes o enviadas para {articulo.nombreArticulo}.')
+                messages.error(request, mark_safe(f'Ya existen ordenes de compra pendientes o enviadas para {articulo.nombreArticulo}. <a href="/admin/sistemaApp/ordencompra/">Ver órdenes de compra</a>'))
     else:
         form = OrdenCompraForm(initial={'articulo': articulo_inicial, 'proveedor': proveedor_defecto})
     
@@ -293,15 +294,15 @@ def calcularError(demanda_real_proxima,demanda_predecida,error_aceptable,metodo_
     return error_calculado, decision,diferencia_real_pronostico
 
 #Modulo Inventario
-def cgi_view(request,articulo_id):
-    #Obtengo el articulo
+def cgi_view(request, articulo_id):
+    # Obtengo el articulo
     articulo = Articulo.objects.get(pk=articulo_id)
     # Obtener el modelo predefinido para el articulo
-    modelo_inventario_seleccionado = articulo.categoria.modeloInventario.nombreMI
-    
+    modelo_inventario_seleccionado = articulo.subCategoria.categoria.modeloInventario.nombreMI
+
     if modelo_inventario_seleccionado == 'Modelo Lote Fijo':
         form = ModeloLoteFijoForm()
-    else :
+    else:
         form = ModeloIntervaloFijoForm()
 
     # Si es un POST
@@ -311,22 +312,27 @@ def cgi_view(request,articulo_id):
             if form.is_valid():
                 demanda_anual = form.cleaned_data['demandaAnual']
                 dias_laborales_anual = form.cleaned_data['diasLaboralesAnual']
-                costo_almacentamiento= articulo.costoAlmacenamiento
-                costo_pedido= articulo.proveedor_predefinido.costoPorPedido
-                demora_proveedor= articulo.proveedor_predefinido.demoraPedido
-                #Calculo
-                lote_optimo= round((2*demanda_anual*(costo_pedido/costo_almacentamiento))**0.5)
-                demanda_diaria= round(demanda_anual/dias_laborales_anual)
-                punto_pedido= demanda_diaria*demora_proveedor
-                numero_pedidos= round(demanda_anual / lote_optimo)
-                tiempo_entre_pedidos= round(dias_laborales_anual/numero_pedidos)
+                costo_almacentamiento = articulo.costoAlmacenamiento
+                costo_pedido = articulo.proveedor_predefinido.costoPorPedido
+                demora_proveedor = articulo.proveedor_predefinido.demoraPedido
 
-                #Calculo CGI
+                if costo_almacentamiento == 0 or dias_laborales_anual == 0:
+                    messages.error(request, "Costo de almacenamiento y/o días laborales anuales no pueden ser cero.")
+                    return render(request, 'cgi_view.html', {'form': form})
+
+                # Calculo
+                lote_optimo = round((2 * demanda_anual * (costo_pedido / costo_almacentamiento)) ** 0.5)
+                demanda_diaria = round(demanda_anual / dias_laborales_anual)
+                punto_pedido = demanda_diaria * demora_proveedor
+                numero_pedidos = round(demanda_anual / lote_optimo)
+                tiempo_entre_pedidos = round(dias_laborales_anual / numero_pedidos)
+
+                # Calculo CGI
                 costo_compra = articulo.precioVenta * demanda_anual
-                costo_almacentamiento_total = costo_almacentamiento * (lote_optimo/2)
-                costo_pedido_total= costo_pedido * (demanda_anual/lote_optimo)
+                costo_almacentamiento_total = costo_almacentamiento * (lote_optimo / 2)
+                costo_pedido_total = costo_pedido * (demanda_anual / lote_optimo)
                 cgi = costo_compra + costo_almacentamiento_total + costo_pedido_total
-                
+
                 resultados = {
                     'demanda_anual': demanda_anual,
                     'demanda_diaria': demanda_diaria,
@@ -338,37 +344,42 @@ def cgi_view(request,articulo_id):
                     'tiempo_entre_pedidos': tiempo_entre_pedidos,
                     'cgi': cgi,
                 }
-                
-                #Guardar Resultados
+
+                # Guardar Resultados
                 articulo.loteOptimo = lote_optimo
                 articulo.puntoPedido = punto_pedido
-                articulo.numeroPedidos= numero_pedidos
+                articulo.numeroPedidos = numero_pedidos
                 articulo.tiempoEntrePedidos = tiempo_entre_pedidos
                 articulo.save()
                 return render(request, 'resultados_cgi.html', resultados)
-            
+
         elif modelo_inventario_seleccionado == 'Modelo Intervalo Fijo':
             form = ModeloIntervaloFijoForm(request.POST)
             if form.is_valid():
                 demanda_anual = form.cleaned_data['demandaAnual']
                 dias_laborales_anual = form.cleaned_data['diasLaboralesAnual']
                 tasa_produccion_anual = form.cleaned_data['tasaProduccionAnual']
-                costo_almacentamiento= articulo.costoAlmacenamiento
-                costo_pedido= form.cleaned_data['costoOrdenProduccion']
-                demora_proveedor= articulo.proveedor_predefinido.demoraPedido
-                #Calculo
-                lote_optimo= round((2*demanda_anual*(costo_pedido/costo_almacentamiento)*(1/(1 - demanda_anual/tasa_produccion_anual)))**0.5)
-                demanda_diaria= round(demanda_anual/dias_laborales_anual)
-                punto_pedido= demanda_diaria*demora_proveedor
-                numero_pedidos= round(demanda_anual / lote_optimo)
-                tiempo_entre_pedidos= round(((2/demanda_anual)*(costo_pedido/costo_almacentamiento)*(1/(1 - demanda_anual/tasa_produccion_anual)))**0.5)
-                
-                #Calculo CGI
+                costo_almacentamiento = articulo.costoAlmacenamiento
+                costo_pedido = form.cleaned_data['costoOrdenProduccion']
+                demora_proveedor = articulo.proveedor_predefinido.demoraPedido
+
+                if costo_almacentamiento == 0 or dias_laborales_anual == 0 or (1 - demanda_anual / tasa_produccion_anual) == 0:
+                    messages.error(request, "Costo de almacenamiento, días laborales anuales y tasa de producción no pueden ser cero.")
+                    return render(request, 'cgi_view.html', {'form': form})
+
+                # Calculo
+                lote_optimo = round((2 * demanda_anual * (costo_pedido / costo_almacentamiento) * (1 / (1 - demanda_anual / tasa_produccion_anual))) ** 0.5)
+                demanda_diaria = round(demanda_anual / dias_laborales_anual)
+                punto_pedido = demanda_diaria * demora_proveedor
+                numero_pedidos = round(demanda_anual / lote_optimo)
+                tiempo_entre_pedidos = round(((2 / demanda_anual) * (costo_pedido / costo_almacentamiento) * (1 / (1 - demanda_anual / tasa_produccion_anual))) ** 0.5)
+
+                # Calculo CGI
                 costo_compra = articulo.precioVenta * demanda_anual
-                costo_almacentamiento_total = costo_almacentamiento * (lote_optimo/2)
-                costo_pedido_total= costo_pedido * (demanda_anual/lote_optimo)
+                costo_almacentamiento_total = costo_almacentamiento * (lote_optimo / 2)
+                costo_pedido_total = costo_pedido * (demanda_anual / lote_optimo)
                 cgi = costo_compra + costo_almacentamiento_total + costo_pedido_total
-                
+
                 resultados = {
                     'demanda_anual': demanda_anual,
                     'demanda_diaria': demanda_diaria,
@@ -380,16 +391,16 @@ def cgi_view(request,articulo_id):
                     'tiempo_entre_pedidos': tiempo_entre_pedidos,
                     'cgi': cgi,
                 }
-                
-                #Guardar Resultados
+
+                # Guardar Resultados
                 articulo.loteOptimo = lote_optimo
                 articulo.puntoPedido = punto_pedido
-                articulo.numeroPedidos= numero_pedidos
+                articulo.numeroPedidos = numero_pedidos
                 articulo.tiempoEntrePedidos = tiempo_entre_pedidos
                 articulo.save()
                 return render(request, 'resultados_cgi.html', resultados)
 
-    #Sacar los field is required del form
+    # Sacar los field is required del form
     if form.errors:
         for field in form.errors:
             form.errors[field] = [error for error in form.errors[field] if error != 'This field is required.']
@@ -422,7 +433,7 @@ def crear_orden_venta(request,articulo_id):
                 orden_venta.save()
                 articulo.stockActual -= cantidad_vendida
                 articulo.save()
-                messages.success(request,f'Se ha generado la orden de venta para {articulo.nombreArticulo}')
+                messages.success(request,mark_safe(f'Se ha generado la orden de venta para {articulo.nombreArticulo}. <a href="/admin/sistemaApp/ordencompra/">Ver órdenes de compra</a>'))
                 #Generar Orden compra automatica si stock actual alcanzo el punto pedido
                 if articulo.stockActual <= articulo.puntoPedido:
                     estado_pendiente = get_object_or_404(EstadoOrdenCompra, nombreEOC='Pendiente')
@@ -434,7 +445,7 @@ def crear_orden_venta(request,articulo_id):
                         proveedor=  articulo.proveedor_predefinido,
                     )
                     orden_compra.save()
-                    messages.success(request,f'Se ha generado la orden de compra para {articulo.nombreArticulo}')
+                    messages.success(request, mark_safe(f'El sistema ha generado una orden de compra para {articulo.nombreArticulo} por llegar a su punto pedido. <a href="/admin/sistemaApp/ordencompra/">Ver órdenes de compra</a>'))
                 return redirect('/admin/sistemaApp/accione/')
     else:
         

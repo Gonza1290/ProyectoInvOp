@@ -47,4 +47,8 @@ def create_user(sender, **kwargs):
     user, created = User.objects.get_or_create(username='invitado')
     if created:
         user.set_password('hola2025')
+        # Agregar usuario al grupo 'Vendedor'
+        vendedor_group = Group.objects.get(name='Vendedor')
+        user.groups.add(vendedor_group)
+        user.is_staff = True
         user.save()

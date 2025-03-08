@@ -123,6 +123,14 @@ class EstadoOrdenCompraAdmin(admin.ModelAdmin):
     exclude = ('fechaHoraBaja',)
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
     
+    def has_add_permission(self, request):
+        # Devuelve False para deshabilitar la opción de añadir nuevos registros
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        # Devuelve False para deshabilitar la opción de modificar instancias existentes
+        return False
+    
 class ProveedorAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombreProveedor', 'fechaHoraBaja','demoraPedido','costoPorPedido')
     ordering = ('id',)

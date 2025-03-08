@@ -22,31 +22,86 @@
         </div>
 
         <!-- Sidebar Menu -->
-        <nav class="mt-2">
+        <nav class="mt-2" aria-label="Sidebar Navigation">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                <li class="nav-item">
+                <li class="nav-item" id="dashboard-menu">
                     <a href="/admin/" class="nav-link">
                         <i class="nav-icon fas fa-th-large"></i>
                         <p>Dashboard</p>
                     </a>
                 </li>
-                {% for app in admin_app_list %}
-                    <li class="nav-header">{{ app.name }}</li>
-                    {% for model in app.models %}
-                        <li class="nav-item">
-                            <a href="{{ model.url }}" class="nav-link">
-                                {% if model.name == "Groups" %}
-                                    <i class="nav-icon fas fa-users"></i>
-                                {% elif model.name == "Users" %}
-                                    <i class="nav-icon fas fa-user"></i>
-                                {% else %}
-                                    <i class="nav-icon fas fa-circle"></i>
-                                {% endif %}
-                                <p>{{ model.name }}</p>
-                            </a>
-                        </li>
-                    {% endfor %}
-                {% endfor %}
+                <li class="nav-item has-treeview" id="admin-menu">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-cogs"></i>
+                        <p>
+                            Administración
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="/admin/sistemaApp/accione/" class="nav-link"><i class="nav-icon fas fa-tasks"></i><p>Acciones</p></a></li>
+                        {% if user.is_superuser %}
+                        <li class="nav-item"><a href="/admin/auth/group/" class="nav-link"><i class="nav-icon fas fa-users"></i><p>Groups</p></a></li>
+                        <li class="nav-item"><a href="/admin/auth/user/" class="nav-link"><i class="nav-icon fas fa-user"></i><p>Users</p></a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview" id="inventory-menu">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-warehouse"></i>
+                        <p>
+                            Inventario
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="/admin/sistemaApp/articulo/" class="nav-link"><i class="nav-icon fas fa-box"></i><p>Artículos</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/categoria/" class="nav-link"><i class="nav-icon fas fa-tags"></i><p>Categorías</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/subcategoria/" class="nav-link"><i class="nav-icon fas fa-tag"></i><p>Sub categorías</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/marca/" class="nav-link"><i class="nav-icon fas fa-trademark"></i><p>Marcas</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/unidadmedida/" class="nav-link"><i class="nav-icon fas fa-ruler"></i><p>Unidad medidas</p></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview" id="purchases-menu">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-shopping-cart"></i>
+                        <p>
+                            Compras
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="/admin/sistemaApp/ordencompra/" class="nav-link"><i class="nav-icon fas fa-shopping-cart"></i><p>Orden compras</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/estadoordencompra/" class="nav-link"><i class="nav-icon fas fa-clipboard-check"></i><p>Estado orden compras</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/proveedor/" class="nav-link"><i class="nav-icon fas fa-truck"></i><p>Proveedores</p></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview" id="sales-menu">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-receipt"></i>
+                        <p>
+                            Ventas
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="/admin/sistemaApp/ordenventa/" class="nav-link"><i class="nav-icon fas fa-receipt"></i><p>Orden ventas</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/mediopago/" class="nav-link"><i class="nav-icon fas fa-credit-card"></i><p>Medio pagos</p></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item has-treeview" id="analysis-menu">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-chart-line"></i>
+                        <p>
+                            Análisis
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item"><a href="/admin/sistemaApp/demandahistorica/" class="nav-link"><i class="nav-icon fas fa-chart-line"></i><p>Demanda historicas</p></a></li>
+                        <li class="nav-item"><a href="/admin/sistemaApp/modeloinventario/" class="nav-link"><i class="nav-icon fas fa-cubes"></i><p>Modelo inventarios</p></a></li>
+                    </ul>
+                </li>
             </ul>
         </nav>
         <!-- /.sidebar-menu -->
@@ -57,17 +112,55 @@
 
 {% block extrahead %}
     {{ block.super }}
+    <style>
+        /* Estilos para mover el dropdown más a la izquierda */
+        .nav .nav-treeview {
+            padding-left: 10px; /* Ajusta este valor según sea necesario */
+        }
+
+        /* Estilos para diferenciar los ítems del menú */
+        .nav .nav-treeview .nav-item .nav-link {
+            font-size: 14px; /* Tamaño de fuente más pequeño para los ítems secundarios */
+            color: #c2c7d0; /* Color más claro para los ítems secundarios */
+        }
+
+        .nav .nav-treeview .nav-item .nav-link i {
+            margin-right: 8px; /* Espacio entre el ícono y el texto */
+        }
+
+        /* Estilo para resaltar el ítem activo */
+        .nav .nav-treeview .nav-item .nav-link.active {
+            color: #ffffff; /* Color blanco para el ítem activo */
+            font-weight: bold; /* Texto en negrita para el ítem activo */
+            background-color: #343a40; /* Fondo oscuro para el ítem activo */
+            border-left: 3px solid #007bff; /* Borde izquierdo azul para el ítem activo */
+        }
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var iframes = document.querySelectorAll('iframe');
-            iframes.forEach(function(iframe) {
-                iframe.onload = function() {
-                    var iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
-                    var inputElement = iframeDocument.querySelector('input[autofocus]');
-                    if (inputElement) {
-                        inputElement.focus();
+            // Restore the state of the sidebar menu
+            var activeMenu = localStorage.getItem('activeMenu');
+            if (activeMenu) {
+                var menuElement = document.getElementById(activeMenu);
+                if (menuElement) {
+                    menuElement.classList.add('menu-open');
+                    menuElement.querySelector('.nav-link').classList.add('active');
+                }
+            }
+
+            // Add click event listeners to save the state of the sidebar menu
+            var navItems = document.querySelectorAll('.nav-sidebar .nav-item.has-treeview');
+            navItems.forEach(function(navItem) {
+                var navLink = navItem.querySelector('a.nav-link');
+                navLink.addEventListener('click', function() {
+                    var menuId = navItem.id;
+                    var activeMenu = localStorage.getItem('activeMenu');
+                    if (navItem.classList.contains('menu-open')) {
+                        localStorage.removeItem('activeMenu');
+                    } else {
+                        localStorage.setItem('activeMenu', menuId);
                     }
-                };
+                });
             });
         });
     </script>

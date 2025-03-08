@@ -2,7 +2,7 @@ from django import forms
 from .models import OrdenCompra,ErrorType,OrdenVenta,MedioPago
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import datetime
-from .utils import obtener_mes,obtener_nombre_mes
+from .utils import obtener_nombre_mes
 
 # Enumeracion
 MESES_CHOICES = [

@@ -925,3 +925,18 @@ body.jazzmin-login-page {
     float: left;
     width: 100%;
 }
+
+.nav-item.dropdown-item {
+    padding-left: 20px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #007bff;
+}
+
+.nav-item.dropdown-item .nav-link {
+    color: #343a40;
+}
+
+.nav-item.dropdown-item .nav-link:hover {
+    background-color: #e9ecef;
+    color: #007bff;
+}
