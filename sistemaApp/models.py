@@ -46,6 +46,13 @@ class Proveedor(BaseModel):
 
     def __str__(self):
         return f"{self.nombreProveedor}"
+    
+    def clean(self):
+        super().clean()
+        if self.demoraPedido < 0:
+            raise ValidationError("La demora del pedido debe ser mayor o igual a 0")
+        if self.costoPorPedido < 0:
+            raise ValidationError("El costo por pedido debe ser mayor o igual a 0")
 
 class Marca(BaseModel):
     nombreMarca = models.CharField(max_length=100, unique=True)
@@ -73,11 +80,10 @@ class Articulo(BaseModel):
     precioVenta = models.IntegerField(default=0)
     precioCostoUnitario = models.IntegerField(default=0)
     precioCostoMayor = models.IntegerField(default=0)
-    costoAlmacenamiento = models.IntegerField(default=0)
+    costoAlmacenamientoAnual = models.IntegerField(default=0)
     loteOptimo = models.IntegerField(default=0)
     tiempoEntrePedidos = models.IntegerField(default=0, null=False, blank=True)
-    numeroPedidos = models.IntegerField(default=0, null=False, blank=True)
-    demandaPredecida = models.IntegerField(default=0, null=False, blank=True)
+    numeroPedidosAnual = models.IntegerField(default=0, null=False, blank=True)
     descripcionArticulo = models.TextField(default=None, null=False, blank=True)
     # Relaciones
     subCategoria = models.ForeignKey(SubCategoria, on_delete=models.PROTECT, null=False)
@@ -87,6 +93,18 @@ class Articulo(BaseModel):
 
     def __str__(self):
         return f"{self.nombreArticulo}"
+    
+    # Sobreescribir el método clean para validar los campos en el formulario de creación
+    def clean(self):
+        super().clean()
+        if self.costoAlmacenamientoAnual < 0:
+            raise ValidationError("El costo de almacenamiento anual debe ser mayor o igual a 0")
+        if self.stockActual < 0:
+            raise ValidationError("El stock actual debe ser mayor o igual a 0")
+        if self.stockSeguridad < 0:
+            raise ValidationError("El stock de seguridad debe ser mayor o igual a 0")
+        if self.precioCostoMayor <0 or self.precioCostoUnitario <0 or self.precioVenta < 0:
+            raise ValidationError("Los precios deben ser mayores o iguales a 0")
 
     def nombre_articulo(self):
         return self.nombreArticulo

@@ -108,12 +108,12 @@ class ArticuloFaltanteFilter(admin.SimpleListFilter):
             )
         
 class ArticuloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombreArticulo', 'stockActual','stockSeguridad','puntoPedido','precioVenta','loteOptimo','subCategoria','proveedor_predefinido','marca','fechaHoraBaja')
+    list_display = ('id', 'nombreArticulo', 'stockActual','precioVenta','puntoPedido','loteOptimo','numeroPedidosAnual','tiempoEntrePedidos','subCategoria','proveedor_predefinido','marca','fechaHoraBaja')
     search_fields = ('id','nombreArticulo')
     ordering = ('id',)
     list_display_links = ('nombreArticulo',)
     list_filter = (ArticuloFaltanteFilter,)  # Agregar el filtro por stockActual
-    exclude = ('fechaHoraBaja','tiempoEntrePedidos','numeroPedidos','demandaPredecida',)  # Excluir el campo fechaHoraBaja del formulario
+    exclude = ('fechaHoraBaja','tiempoEntrePedidos','numeroPedidosAnual','puntoPedido','loteOptimo')  # Excluir el campo fechaHoraBaja del formulario
     actions = [LogicalDeletionMixin.Eliminacion_Logica, LogicalDeletionMixin.Activacion_Logica]
 
 class EstadoOrdenCompraAdmin(admin.ModelAdmin):

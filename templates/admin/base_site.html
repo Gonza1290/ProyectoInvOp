@@ -136,32 +136,4 @@
             border-left: 3px solid #007bff; /* Borde izquierdo azul para el ítem activo */
         }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Restore the state of the sidebar menu
-            var activeMenu = localStorage.getItem('activeMenu');
-            if (activeMenu) {
-                var menuElement = document.getElementById(activeMenu);
-                if (menuElement) {
-                    menuElement.classList.add('menu-open');
-                    menuElement.querySelector('.nav-link').classList.add('active');
-                }
-            }
-
-            // Add click event listeners to save the state of the sidebar menu
-            var navItems = document.querySelectorAll('.nav-sidebar .nav-item.has-treeview');
-            navItems.forEach(function(navItem) {
-                var navLink = navItem.querySelector('a.nav-link');
-                navLink.addEventListener('click', function() {
-                    var menuId = navItem.id;
-                    var activeMenu = localStorage.getItem('activeMenu');
-                    if (navItem.classList.contains('menu-open')) {
-                        localStorage.removeItem('activeMenu');
-                    } else {
-                        localStorage.setItem('activeMenu', menuId);
-                    }
-                });
-            });
-        });
-    </script>
 {% endblock %}

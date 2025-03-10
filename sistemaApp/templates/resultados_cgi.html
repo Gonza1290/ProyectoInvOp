@@ -6,22 +6,24 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
-                <h1>Resultados de Prediccion Demanda</h1>
+                <h1>Resultados de Predicción de Demanda</h1>
                 <p>Demanda Anual: {{ demanda_anual }}</p>
                 <p>Demanda Diaria: {{ demanda_diaria }}</p>
-                <p>Costo Almacenamiento: {{ costo_almacentamiento }}</p>
-                <p>Costo Pedido: {{ costo_pedido }}</p>
-                <p>Lote Optimo: {{ lote_optimo }}</p>
-                <p>Punto Pedido: {{ punto_pedido }}</p>
-                <p>Numero de Pedidos: {{ numero_pedidos }}</p>
-                <p>Tiempo Entre Pedidos (dias): {{ tiempo_entre_pedidos }}</p>
-                <p>Costo de Gestion de Invetario: $ {{ cgi }}</p>
+                <p>Lote Óptimo: {{ lote_optimo }}</p>
+                <p>Punto de Pedido: {{ punto_pedido }}</p>
+                <p>Número de Pedidos Anual: {{ numero_pedidos }}</p>
+                <p>Tiempo Entre Pedidos (días): {{ tiempo_entre_pedidos }}</p>
+                <p>Costo de Compra Total: ${{ costo_compra_total }}</p>
+                <p>Costo de Almacenamiento Anual: ${{ costo_almacentamiento_anual }}</p>
+                <p>Costo de Pedido Total: ${{ costo_pedido_total }}</p>
+                <p>Costo de Gestión de Inventario (CGI): ${{ cgi }}</p>
             </div>
         </div>
     </div>
-    <!-- Boton para volver -->
+    <!-- Botones para volver y obtener ayuda -->
     <div class="mt-4">
-        <a href="/admin/sistemaApp/accione/" class="btn btn-primary">Volver</a>
+        <a href="{% url 'sistemaApp:acciones' %}" class="btn btn-primary">Volver</a>
+        <a href="{% url 'sistemaApp:help' %}" class="btn btn-secondary">Ayuda</a>
     </div>
 </div>
 {% endblock %}

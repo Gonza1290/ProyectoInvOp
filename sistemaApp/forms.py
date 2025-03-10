@@ -151,9 +151,11 @@ class SuavizacionExponencialForm(forms.Form):
 class ModeloLoteFijoForm(forms.Form):
     demandaAnual = forms.IntegerField(label='Demanda Anual',min_value=0)
     diasLaboralesAnual = forms.IntegerField(label='Dias Laborales Anual',min_value=0)
+    
 
 class ModeloIntervaloFijoForm(forms.Form):
     demandaAnual = forms.IntegerField(label='Demanda Anual',min_value=0)
     diasLaboralesAnual = forms.IntegerField(label='Dias Laborales Anual',min_value=0)
     tasaProduccionAnual = forms.IntegerField(label='Tasa de Produccion Anual ',min_value=0)
     costoOrdenProduccion= forms.IntegerField(label='Costo Orden Produccion',min_value=0)
+    

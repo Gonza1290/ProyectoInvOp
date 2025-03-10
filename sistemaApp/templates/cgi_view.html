@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-12">
                 {% if modelo_inventario_seleccionado == 'Modelo Lote Fijo' %}
-                    <h1>Modelo Lote Fijo</h1>
+                    <h1>Modelo Lote Fijo (EOQ)</h1>
                 {% else %}
                     <h1>Modelo Intervalo Fijo</h1>
                 {% endif %}
@@ -27,6 +27,7 @@
     <!-- Boton para volver -->
     <div class="mt-4">
         <a href="/admin/sistemaApp/accione/" class="btn btn-primary">Volver</a>
+        <a href="{% url 'sistemaApp:help' %}" class="btn btn-secondary">Ayuda</a>
     </div>
 </div>
 
